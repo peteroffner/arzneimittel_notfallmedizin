@@ -8,7 +8,7 @@
     <style>
         :root { --primary: #d32f2f; --secondary: #455a64; --bg: #f4f7f6; --accent: #1976d2; }
         body { font-family: 'Segoe UI', Roboto, sans-serif; background-color: var(--bg); padding: 10px; color: #333; }
-        .container { max-width: 1100px; margin: auto; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .container { max-width: 1200px; margin: auto; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         .header-box { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
         h1 { color: var(--primary); font-size: 1.5rem; margin: 0; }
         .toolbar { display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap; }
@@ -19,7 +19,7 @@
         .btn-cancel { background-color: #757575; }
         .btn-delete { background-color: #c62828; }
         .btn-login { background-color: var(--secondary); }
-        .btn-link { background-color: var(--accent); margin-top: 5px; justify-content: center; width: 100%; }
+        .btn-link { background-color: var(--accent); margin-top: 5px; justify-content: center; width: 100%; box-sizing: border-box; }
         .admin-only { display: none; }
         .status-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; background: #ccc; margin-right: 5px; }
         .online { background: #4caf50; }
@@ -30,7 +30,6 @@
         .med-table td { padding: 10px; border-bottom: 1px solid #eee; vertical-align: middle; }
         .med-table tr:hover { background-color: #fff4f4; cursor: pointer; }
         
-        /* Badges für die Übersicht */
         .badge { padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; text-transform: uppercase; color: white !important; margin-right: 4px; display: inline-block; white-space: nowrap; margin-bottom: 2px; }
         .badge-al1 { background-color: #1976d2 !important; }
         .badge-al2 { background-color: #7b1fa2 !important; }
@@ -72,6 +71,7 @@
                 <th onclick="sortiereTabelle('handelsname')">Handelsname <span id="sort-handelsname">▲</span></th>
                 <th onclick="sortiereTabelle('wirkstoff')" class="hide-mobile">Wirkstoff <span id="sort-wirkstoff"></span></th>
                 <th onclick="sortiereTabelle('routen')">Verabreichung <span id="sort-routen"></span></th>
+                <th onclick="sortiereTabelle('listen')">Listen <span id="sort-listen"></span></th>
             </tr>
         </thead>
         <tbody id="med-tbody"></tbody>
@@ -178,13 +178,20 @@
             const row = tbody.insertRow();
             row.onclick = () => zeigeDetails(med.id);
             
-            // Verabreichungsweg Badges
             const routes = med.routen ? med.routen.split(', ').map(r => `<span class="badge badge-route">${r}</span>`).join("") : "";
+            
+            // Listen Badges mit Abkürzung für die Übersicht
+            const listen = med.listen ? med.listen.split(', ').map(l => {
+                let short = l.includes('1') ? 'AL1' : (l.includes('2') ? 'AL2' : 'NEF');
+                let cls = l.includes('1') ? 'al1' : (l.includes('2') ? 'al2' : 'nef');
+                return `<span class="badge badge-${cls}">${short}</span>`;
+            }).join("") : "";
             
             row.innerHTML = `
                 <td><strong>${med.handelsname}</strong></td>
                 <td class="hide-mobile">${med.wirkstoff || ''}</td>
                 <td>${routes}</td>
+                <td>${listen}</td>
             `;
         });
     }
@@ -196,7 +203,7 @@
             sortSpalte = spalte;
             sortAufsteigend = true;
         }
-        ['handelsname', 'wirkstoff', 'routen'].forEach(s => {
+        ['handelsname', 'wirkstoff', 'routen', 'listen'].forEach(s => {
             const el = document.getElementById('sort-' + s);
             if(el) el.innerText = '';
         });

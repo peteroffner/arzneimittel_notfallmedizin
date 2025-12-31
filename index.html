@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Arzneimitteldatenbank - Pro</title>
+    <title>Arzneimittel Notfallmedizin - Cloud DB</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --primary: #d32f2f; --secondary: #455a64; --bg: #f4f7f6; --accent: #1976d2; }
@@ -49,7 +49,7 @@
 
 <div class="container">
     <div class="header-box">
-        <h1><span id="sync-status" class="status-dot"></span> Arzneimitteldatenbank</h1>
+        <h1><span id="sync-status" class="status-dot"></span> Arzneimittel Notfallmedizin RKNÖ</h1>
         <div id="auth-controls">
             <button id="login-btn" class="btn btn-login" onclick="login()">🔑 Admin</button>
             <button id="logout-btn" class="btn btn-cancel admin-only" onclick="logout()">Abmelden</button>
@@ -133,7 +133,7 @@
     let isAdmin = false;
     let sortSpalte = 'handelsname';
     let sortAufsteigend = true;
-    const MASTER_PW = "1234"; // Dein Passwort
+    const MASTER_PW = "RKNÖ"; // Dein Passwort
 
     // Check Login beim Laden
     function checkAuth() {
@@ -331,3 +331,4 @@
 </script>
 </body>
 </html>
+

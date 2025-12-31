@@ -3,44 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Notfallmedizin - Cloud DB (Protected)</title>
+    <title>Notfallmedizin - Volltext Cloud DB</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --primary: #d32f2f; --secondary: #455a64; --bg: #f4f7f6; --accent: #1976d2; }
         body { font-family: 'Segoe UI', Roboto, sans-serif; background-color: var(--bg); padding: 10px; color: #333; }
         .container { max-width: 1200px; margin: auto; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        
         .header-box { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
         h1 { color: var(--primary); font-size: 1.5rem; margin: 0; }
-
         .toolbar { display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap; }
-        #search-bar { flex-grow: 1; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; min-width: 200px; }
-        
-        .btn { padding: 10px 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; color: white; transition: 0.2s; display: flex; align-items: center; gap: 5px; font-size: 14px; }
+        #search-bar { flex-grow: 1; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; min-width: 200px; background-color: #fffde7; }
+        .btn { padding: 10px 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; color: white; transition: 0.2s; display: flex; align-items: center; gap: 5px; font-size: 14px; text-decoration: none; }
         .btn-add { background-color: var(--primary); }
         .btn-save { background-color: #2e7d32; }
         .btn-cancel { background-color: #757575; }
         .btn-delete { background-color: #c62828; }
         .btn-login { background-color: var(--secondary); }
-        .btn-logout { background-color: #f44336; }
-
-        /* Admin-Elemente standardmäßig verstecken */
+        .btn-link { background-color: var(--accent); margin-top: 5px; justify-content: center; width: 100%; }
         .admin-only { display: none; }
-
         .status-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; background: #ccc; margin-right: 5px; }
         .online { background: #4caf50; }
-
         .med-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
         .med-table th { background: #eee; padding: 12px 10px; text-align: left; border-bottom: 2px solid #ddd; }
         .med-table td { padding: 10px; border-bottom: 1px solid #eee; vertical-align: middle; }
         .med-table tr:hover { background-color: #fff4f4; cursor: pointer; }
-
         .badge { padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; text-transform: uppercase; color: white !important; margin-right: 4px; display: inline-block; white-space: nowrap; margin-bottom: 2px; }
         .badge-arzneimittelliste1 { background-color: #1976d2 !important; }
         .badge-arzneimittelliste2 { background-color: #7b1fa2 !important; }
         .badge-nef { background-color: #e65100 !important; }
         .badge-route { background-color: #607d8b !important; }
-
         #detail-view { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); overflow-y: auto; z-index: 100; }
         .modal-content { background: white; max-width: 850px; margin: 10px auto; padding: 20px; border-radius: 12px; }
         .grid-form { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
@@ -51,8 +42,6 @@
         .highlight-field { background-color: #fffde7; border: 1px solid #fbc02d !important; }
         .tip-field { background-color: #e1f5fe; border: 1px solid #03a9f4 !important; }
         .checkbox-group { display: flex; gap: 10px; padding: 10px; background: #f9f9f9; border-radius: 6px; flex-wrap: wrap; border: 1px solid #eee; }
-        .checkbox-item { display: flex; align-items: center; gap: 4px; font-size: 13px; font-weight: bold; cursor: pointer; }
-        
         @media (max-width: 768px) { .grid-form { grid-template-columns: 1fr; } .full-width { grid-column: span 1; } .hide-mobile { display: none; } }
     </style>
 </head>
@@ -62,13 +51,13 @@
     <div class="header-box">
         <h1><span id="sync-status" class="status-dot"></span> Arzneimittel Cloud</h1>
         <div id="auth-controls">
-            <button id="login-btn" class="btn btn-login" onclick="login()">🔑 Login</button>
-            <button id="logout-btn" class="btn btn-logout admin-only" onclick="logout()">Abmelden</button>
+            <button id="login-btn" class="btn btn-login" onclick="login()">🔑 Admin</button>
+            <button id="logout-btn" class="btn btn-cancel admin-only" onclick="logout()">Abmelden</button>
         </div>
     </div>
 
     <div class="toolbar">
-        <input type="text" id="search-bar" placeholder="Suchen..." onkeyup="filterTabelle()">
+        <input type="text" id="search-bar" placeholder="Volltextsuche (Indikation, Name, Tipps...)" onkeyup="filterTabelle()">
         <button class="btn btn-add admin-only" onclick="neuesMedikament()">✚ Neu</button>
     </div>
 
@@ -87,45 +76,53 @@
 
 <div id="detail-view">
     <div class="modal-content">
-        <h2 id="view-title" style="color: var(--primary); margin-bottom:15px;">Eintrag</h2>
+        <h2 id="view-title" style="color: var(--primary); margin-bottom:15px;">Details</h2>
         <div class="grid-form">
             <div class="field"><label>Handelsname</label><input type="text" id="edit-handelsname"></div>
             <div class="field"><label>Wirkstoff</label><input type="text" id="edit-wirkstoff"></div>
             <div class="field"><label>Wirkstoffgruppe</label><input type="text" id="edit-gruppe"></div>
 
             <div class="field full-width">
-                <label>Listen-Zugehörigkeit</label>
+                <label>Listen</label>
                 <div class="checkbox-group">
-                    <label class="checkbox-item"><input type="checkbox" name="liste-zugehoerigkeit" value="Arzneimittelliste 1"> Arzneimittelliste 1</label>
-                    <label class="checkbox-item"><input type="checkbox" name="liste-zugehoerigkeit" value="Arzneimittelliste 2"> Arzneimittelliste 2</label>
-                    <label class="checkbox-item"><input type="checkbox" name="liste-zugehoerigkeit" value="NEF"> NEF</label>
+                    <label><input type="checkbox" name="liste-zugehoerigkeit" value="Arzneimittelliste 1"> L1</label>
+                    <label><input type="checkbox" name="liste-zugehoerigkeit" value="Arzneimittelliste 2"> L2</label>
+                    <label><input type="checkbox" name="liste-zugehoerigkeit" value="NEF"> NEF</label>
                 </div>
             </div>
 
+            <div class="field"><label>Ampulle / Konzentration</label><input type="text" id="edit-ampulle"></div>
             <div class="field"><label>Wirkeintritt</label><input type="text" id="edit-eintritt"></div>
             <div class="field"><label>Wirkdauer</label><input type="text" id="edit-dauer"></div>
 
             <div class="field full-width">
-                <label>Verabreichungsmöglichkeit</label>
+                <label>Applikation</label>
                 <div class="checkbox-group">
-                    <label class="checkbox-item"><input type="checkbox" name="route" value="i.v."> i.v.</label>
-                    <label class="checkbox-item"><input type="checkbox" name="route" value="i.m."> i.m.</label>
-                    <label class="checkbox-item"><input type="checkbox" name="route" value="i.n."> i.n.</label>
-                    <label class="checkbox-item"><input type="checkbox" name="route" value="i.o."> i.o.</label>
-                    <label class="checkbox-item"><input type="checkbox" name="route" value="p.o."> p.o.</label>
+                    <label><input type="checkbox" name="route" value="i.v."> i.v.</label>
+                    <label><input type="checkbox" name="route" value="i.m."> i.m.</label>
+                    <label><input type="checkbox" name="route" value="i.n."> i.n.</label>
+                    <label><input type="checkbox" name="route" value="i.o."> i.o.</label>
+                    <label><input type="checkbox" name="route" value="p.o."> p.o.</label>
                 </div>
             </div>
 
             <div class="field full-width"><label>Indikation</label><textarea id="edit-indikation" class="auto-grow"></textarea></div>
             <div class="field full-width"><label style="color:red">Kontraindikationen</label><textarea id="edit-kontra" class="auto-grow"></textarea></div>
-            <div class="field full-width"><label>Dosierungshinweis</label><textarea id="edit-dosierung" class="highlight-field auto-grow"></textarea></div>
+            <div class="field full-width"><label>Dosierung</label><textarea id="edit-dosierung" class="highlight-field auto-grow"></textarea></div>
             <div class="field full-width"><label>Praxistipp / Bemerkung</label><textarea id="edit-tipp" class="tip-field auto-grow"></textarea></div>
+            
+            <div class="field full-width">
+                <label>Externer Verweis (URL)</label>
+                <input type="text" id="edit-link" placeholder="https://...">
+                <a id="btn-open-link" href="#" target="_blank" class="btn btn-link" style="display:none;">🔗 Link öffnen</a>
+            </div>
+
             <div class="field full-width"><label>Nebenwirkungen</label><textarea id="edit-nebenwirkungen" class="auto-grow"></textarea></div>
             <div class="field full-width"><label>Wirkweise</label><textarea id="edit-wirkweise" class="auto-grow"></textarea></div>
         </div>
 
         <div class="toolbar" style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px;">
-            <button id="save-btn" class="btn btn-save admin-only" onclick="speichern()">💾 Cloud-Speichern</button>
+            <button id="save-btn" class="btn btn-save admin-only" onclick="speichern()">💾 Speichern</button>
             <button id="delete-btn" class="btn btn-delete admin-only" onclick="loeschen()">🗑️ Löschen</button>
             <button class="btn btn-cancel" onclick="schliessen()">Schließen</button>
         </div>
@@ -133,7 +130,6 @@
 </div>
 
 <script>
-    // Supabase Konfiguration
     const SUPABASE_URL = "https://ihzoojwcaqgeoavlazvr.supabase.co";
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imloem9vandjYXFnZW9hdmxhenZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcxNTU2MDUsImV4cCI6MjA4MjczMTYwNX0.X5mxNusCVwQRs4GnM0qDTH4AUMjJd7mDI2_FzffTfwY";
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -141,17 +137,14 @@
     let medikamente = [];
     let aktuellesMedId = null;
     let isAdmin = false;
-    const MASTER_PW = "Rettung2025"; // <--- HIER DEIN PASSWORT ÄNDERN
+    const MASTER_PW = "Rettung2025"; // Hier Passwort ändern
 
     function login() {
-        const pw = prompt("Admin-Passwort eingeben:");
+        const pw = prompt("Admin-Passwort:");
         if(pw === MASTER_PW) {
             isAdmin = true;
             document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'flex');
             document.getElementById('login-btn').style.display = 'none';
-            alert("Erfolgreich eingeloggt!");
-        } else {
-            alert("Falsches Passwort!");
         }
     }
 
@@ -164,17 +157,11 @@
     async function ladeDaten() {
         document.getElementById('sync-status').classList.remove('online');
         const { data, error } = await supabaseClient.from('medikamente').select('*').order('handelsname', { ascending: true });
-        
-        if (error) {
-            console.error("Cloud-Fehler:", error);
-            const localData = localStorage.getItem("med_backup_cloud");
-            medikamente = localData ? JSON.parse(localData) : [];
-        } else {
+        if (!error) {
             medikamente = data;
             document.getElementById('sync-status').classList.add('online');
-            localStorage.setItem("med_backup_cloud", JSON.stringify(medikamente));
+            renderTabelle(medikamente);
         }
-        renderTabelle(medikamente);
     }
 
     function renderTabelle(daten) {
@@ -183,90 +170,90 @@
         daten.forEach(med => {
             const row = tbody.insertRow();
             row.onclick = () => zeigeDetails(med.id);
-            const listenArray = med.listen ? med.listen.split(', ') : [];
-            const listenHtml = listenArray.map(l => `<span class="badge badge-${l.toLowerCase().replace(/\s/g, "")}">${l}</span>`).join("");
-            const routenArray = med.routen ? med.routen.split(', ') : [];
-            const routenHtml = routenArray.map(r => `<span class="badge badge-route">${r}</span>`).join("");
-            row.innerHTML = `<td><strong>${med.handelsname || 'Unbenannt'}</strong></td><td class="hide-mobile">${med.wirkstoff || ''}</td><td>${routenHtml}</td><td>${listenHtml}</td>`;
+            const listen = med.listen ? med.listen.split(', ').map(l => `<span class="badge badge-${l.toLowerCase().replace(/\s/g, "")}">${l}</span>`).join("") : "";
+            const routes = med.routen ? med.routen.split(', ').map(r => `<span class="badge badge-route">${r}</span>`).join("") : "";
+            row.innerHTML = `<td><strong>${med.handelsname}</strong></td><td class="hide-mobile">${med.wirkstoff || ''}</td><td>${routes}</td><td>${listen}</td>`;
         });
+    }
+
+    // DIE NEUE VOLLTEXTSUCHE
+    function filterTabelle() {
+        const q = document.getElementById('search-bar').value.toLowerCase();
+        const gefiltert = medikamente.filter(m => {
+            const volltext = [
+                m.handelsname, m.wirkstoff, m.gruppe, m.indikation, m.kontra, 
+                m.dosierung, m.tipp, m.nebenwirkungen, m.wirkweise, m.ampulle
+            ].join(" ").toLowerCase();
+            return volltext.includes(q);
+        });
+        renderTabelle(gefiltert);
     }
 
     async function speichern() {
         if(!isAdmin) return;
-        const saveBtn = document.getElementById('save-btn');
-        saveBtn.disabled = true;
         const daten = {
             handelsname: document.getElementById('edit-handelsname').value,
             wirkstoff: document.getElementById('edit-wirkstoff').value,
             gruppe: document.getElementById('edit-gruppe').value,
+            ampulle: document.getElementById('edit-ampulle').value,
             eintritt: document.getElementById('edit-eintritt').value,
             dauer: document.getElementById('edit-dauer').value,
             indikation: document.getElementById('edit-indikation').value,
             kontra: document.getElementById('edit-kontra').value,
             dosierung: document.getElementById('edit-dosierung').value,
             tipp: document.getElementById('edit-tipp').value,
+            link: document.getElementById('edit-link').value,
             nebenwirkungen: document.getElementById('edit-nebenwirkungen').value,
             wirkweise: document.getElementById('edit-wirkweise').value,
             listen: Array.from(document.querySelectorAll('input[name="liste-zugehoerigkeit"]:checked')).map(cb => cb.value).join(', '),
             routen: Array.from(document.querySelectorAll('input[name="route"]:checked')).map(cb => cb.value).join(', ')
         };
-
-        let result = aktuellesMedId ? await supabaseClient.from('medikamente').update(daten).eq('id', aktuellesMedId) : await supabaseClient.from('medikamente').insert([daten]);
-
-        if (result.error) alert("Fehler: " + result.error.message);
-        else { await ladeDaten(); schliessen(); }
-        saveBtn.disabled = false;
+        let res = aktuellesMedId ? await supabaseClient.from('medikamente').update(daten).eq('id', aktuellesMedId) : await supabaseClient.from('medikamente').insert([daten]);
+        if (!res.error) { await ladeDaten(); schliessen(); }
     }
 
     async function loeschen() {
-        if(isAdmin && aktuellesMedId && confirm("Wirklich löschen?")) {
-            const { error } = await supabaseClient.from('medikamente').delete().eq('id', aktuellesMedId);
-            if (!error) { await ladeDaten(); schliessen(); }
+        if(isAdmin && confirm("Wirklich löschen?")) {
+            await supabaseClient.from('medikamente').delete().eq('id', aktuellesMedId);
+            await ladeDaten(); schliessen();
         }
     }
 
     function zeigeDetails(id) {
         const med = medikamente.find(m => m.id === id);
         aktuellesMedId = id;
-        document.getElementById('view-title').innerText = isAdmin ? "Eintrag bearbeiten" : "Arzneimittel-Info";
-        
-        const felder = ['handelsname', 'wirkstoff', 'gruppe', 'eintritt', 'dauer', 'indikation', 'kontra', 'dosierung', 'tipp', 'nebenwirkungen', 'wirkweise'];
+        const felder = ['handelsname', 'wirkstoff', 'gruppe', 'ampulle', 'eintritt', 'dauer', 'indikation', 'kontra', 'dosierung', 'tipp', 'nebenwirkungen', 'wirkweise', 'link'];
         felder.forEach(f => {
             const el = document.getElementById('edit-' + f);
             el.value = med[f] || "";
-            el.readOnly = !isAdmin; // Felder sperren wenn kein Admin
+            el.readOnly = !isAdmin;
         });
 
+        const linkBtn = document.getElementById('btn-open-link');
+        if(med.link && med.link.startsWith('http')) {
+            linkBtn.href = med.link;
+            linkBtn.style.display = 'flex';
+        } else {
+            linkBtn.style.display = 'none';
+        }
+
         const routes = med.routen ? med.routen.split(', ') : [];
-        document.querySelectorAll('input[name="route"]').forEach(cb => {
-            cb.checked = routes.includes(cb.value);
-            cb.disabled = !isAdmin;
-        });
-        
+        document.querySelectorAll('input[name="route"]').forEach(cb => { cb.checked = routes.includes(cb.value); cb.disabled = !isAdmin; });
         const lists = med.listen ? med.listen.split(', ') : [];
-        document.querySelectorAll('input[name="liste-zugehoerigkeit"]').forEach(cb => {
-            cb.checked = lists.includes(cb.value);
-            cb.disabled = !isAdmin;
-        });
-        
+        document.querySelectorAll('input[name="liste-zugehoerigkeit"]').forEach(cb => { cb.checked = lists.includes(cb.value); cb.disabled = !isAdmin; });
         document.getElementById('detail-view').style.display = 'block';
         updateAllTextareaHeights();
     }
 
     function neuesMedikament() {
         aktuellesMedId = null;
-        document.getElementById('view-title').innerText = "Neues Medikament";
-        document.querySelectorAll('.modal-content input[type="text"], .modal-content textarea').forEach(el => { el.value = ""; el.readOnly = false; });
+        document.querySelectorAll('.modal-content input, .modal-content textarea').forEach(el => { el.value = ""; el.readOnly = false; });
         document.querySelectorAll('input[type="checkbox"]').forEach(cb => { cb.checked = false; cb.disabled = false; });
+        document.getElementById('btn-open-link').style.display = 'none';
         document.getElementById('detail-view').style.display = 'block';
-        updateAllTextareaHeights();
     }
 
     function schliessen() { document.getElementById('detail-view').style.display = 'none'; }
-    function filterTabelle() {
-        const q = document.getElementById('search-bar').value.toLowerCase();
-        renderTabelle(medikamente.filter(m => (m.handelsname || "").toLowerCase().includes(q) || (m.wirkstoff || "").toLowerCase().includes(q)));
-    }
     function initAutoGrow() {
         document.querySelectorAll('.auto-grow').forEach(t => {
             t.addEventListener('input', function() { this.style.height = 'auto'; this.style.height = (this.scrollHeight) + 'px'; });
@@ -275,7 +262,6 @@
     function updateAllTextareaHeights() {
         setTimeout(() => { document.querySelectorAll('.auto-grow').forEach(t => { t.style.height = 'auto'; t.style.height = (t.scrollHeight) + 'px'; }); }, 50);
     }
-
     ladeDaten();
     initAutoGrow();
 </script>

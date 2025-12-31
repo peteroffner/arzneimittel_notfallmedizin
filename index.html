@@ -237,6 +237,8 @@
 
     async function speichern() {
         if(!isAdmin) return;
+
+        // 1. Daten aus den Feldern sammeln
         const daten = {
             handelsname: document.getElementById('edit-handelsname').value,
             wirkstoff: document.getElementById('edit-wirkstoff').value,
@@ -251,11 +253,47 @@
             link: document.getElementById('edit-link').value,
             nebenwirkungen: document.getElementById('edit-nebenwirkungen').value,
             wirkweise: document.getElementById('edit-wirkweise').value,
+            // Hier wichtig: Sicherstellen, dass die Checkboxen korrekt ausgelesen werden
             listen: Array.from(document.querySelectorAll('input[name="liste-zugehoerigkeit"]:checked')).map(cb => cb.value).join(', '),
             routen: Array.from(document.querySelectorAll('input[name="route"]:checked')).map(cb => cb.value).join(', ')
         };
-        let res = aktuellesMedId ? await supabaseClient.from('medikamente').update(daten).eq('id', aktuellesMedId) : await supabaseClient.from('medikamente').insert([daten]);
-        if (!res.error) { await ladeDaten(); schliessen(); }
+
+        let res;
+        if (aktuellesMedId) {
+            // Update bestehendes Medikament
+            res = await supabaseClient.from('medikamente').update(daten).eq('id', aktuellesMedId);
+        } else {
+            // Einfügen neues Medikament
+            res = await supabaseClient.from('medikamente').insert([daten]);
+        }
+
+        if (res.error) {
+            console.error("Fehler beim Speichern:", res.error);
+            alert("Fehler beim Speichern!");
+        } else {
+            // WICHTIG: Erst die Daten neu laden, dann das Fenster schließen
+            await ladeDaten(); 
+            schliessen();
+            alert("Gespeichert!"); // Kurze Bestätigung
+        }
+    }
+
+    // Stelle sicher, dass ladeDaten die Anzeige auch wirklich triggert
+    async function ladeDaten() {
+        const statusDot = document.getElementById('sync-status');
+        if(statusDot) statusDot.classList.remove('online');
+
+        const { data, error } = await supabaseClient
+            .from('medikamente')
+            .select('*');
+
+        if (error) {
+            console.error("Fehler beim Laden:", error);
+        } else {
+            medikamente = data;
+            if(statusDot) statusDot.classList.add('online');
+            filterTabelle(); // Das aktualisiert die gefilterte Liste und das Rendering
+        }
     }
 
     async function loeschen() {
@@ -313,3 +351,4 @@
 </script>
 </body>
 </html>
+

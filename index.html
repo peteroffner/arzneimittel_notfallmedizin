@@ -8,14 +8,11 @@
     <style>
         :root { --primary: #d32f2f; --secondary: #455a64; --bg: #f4f7f6; --accent: #1976d2; }
         body { font-family: 'Segoe UI', Roboto, sans-serif; background-color: var(--bg); padding: 10px; color: #333; }
-        .container { max-width: 1200px; margin: auto; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .container { max-width: 1100px; margin: auto; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         .header-box { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
         h1 { color: var(--primary); font-size: 1.5rem; margin: 0; }
         .toolbar { display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap; }
-        
-        /* Suchfeld auf Weiß gesetzt */
-        #search-bar { flex-grow: 1; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; min-width: 200px; background-color: #ffffff; }
-        
+        #search-bar { flex-grow: 1; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; background-color: #ffffff; }
         .btn { padding: 10px 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; color: white; transition: 0.2s; display: flex; align-items: center; gap: 5px; font-size: 14px; text-decoration: none; }
         .btn-add { background-color: var(--primary); }
         .btn-save { background-color: #2e7d32; }
@@ -28,17 +25,18 @@
         .online { background: #4caf50; }
         
         .med-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
-        .med-table th { background: #eee; padding: 12px 10px; text-align: left; border-bottom: 2px solid #ddd; cursor: pointer; user-select: none; white-space: nowrap; }
+        .med-table th { background: #eee; padding: 12px 10px; text-align: left; border-bottom: 2px solid #ddd; cursor: pointer; user-select: none; }
         .med-table th:hover { background: #e0e0e0; }
         .med-table td { padding: 10px; border-bottom: 1px solid #eee; vertical-align: middle; }
         .med-table tr:hover { background-color: #fff4f4; cursor: pointer; }
         
+        /* Badges für die Übersicht */
         .badge { padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; text-transform: uppercase; color: white !important; margin-right: 4px; display: inline-block; white-space: nowrap; margin-bottom: 2px; }
-        .badge-arzneimittelliste1 { background-color: #1976d2 !important; }
-        .badge-arzneimittelliste2 { background-color: #7b1fa2 !important; }
+        .badge-al1 { background-color: #1976d2 !important; }
+        .badge-al2 { background-color: #7b1fa2 !important; }
         .badge-nef { background-color: #e65100 !important; }
         .badge-route { background-color: #607d8b !important; }
-        
+
         #detail-view { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); overflow-y: auto; z-index: 100; }
         .modal-content { background: white; max-width: 850px; margin: 10px auto; padding: 20px; border-radius: 12px; }
         .grid-form { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
@@ -48,7 +46,7 @@
         .field textarea { resize: none; overflow: hidden; min-height: 40px; }
         .highlight-field { background-color: #fffde7; border: 1px solid #fbc02d !important; }
         .tip-field { background-color: #e1f5fe; border: 1px solid #03a9f4 !important; }
-        .checkbox-group { display: flex; gap: 10px; padding: 10px; background: #f9f9f9; border-radius: 6px; flex-wrap: wrap; border: 1px solid #eee; }
+        .checkbox-group { display: flex; gap: 15px; padding: 10px; background: #f9f9f9; border-radius: 6px; flex-wrap: wrap; border: 1px solid #eee; }
         @media (max-width: 768px) { .grid-form { grid-template-columns: 1fr; } .full-width { grid-column: span 1; } .hide-mobile { display: none; } }
     </style>
 </head>
@@ -56,7 +54,7 @@
 
 <div class="container">
     <div class="header-box">
-        <h1><span id="sync-status" class="status-dot"></span> Arzneimittel Notfallmedizin Cloud</h1>
+        <h1><span id="sync-status" class="status-dot"></span> Arzneimittel Notfallmedizin</h1>
         <div id="auth-controls">
             <button id="login-btn" class="btn btn-login" onclick="login()">🔑 Admin</button>
             <button id="logout-btn" class="btn btn-cancel admin-only" onclick="logout()">Abmelden</button>
@@ -64,7 +62,7 @@
     </div>
 
     <div class="toolbar">
-        <input type="text" id="search-bar" placeholder="Volltextsuche..." onkeyup="filterTabelle()">
+        <input type="text" id="search-bar" placeholder="Suchen..." onkeyup="filterTabelle()">
         <button class="btn btn-add admin-only" onclick="neuesMedikament()">✚ Neu</button>
     </div>
 
@@ -74,7 +72,6 @@
                 <th onclick="sortiereTabelle('handelsname')">Handelsname <span id="sort-handelsname">▲</span></th>
                 <th onclick="sortiereTabelle('wirkstoff')" class="hide-mobile">Wirkstoff <span id="sort-wirkstoff"></span></th>
                 <th onclick="sortiereTabelle('routen')">Verabreichung <span id="sort-routen"></span></th>
-                <th onclick="sortiereTabelle('listen')">Listen <span id="sort-listen"></span></th>
             </tr>
         </thead>
         <tbody id="med-tbody"></tbody>
@@ -90,11 +87,11 @@
             <div class="field"><label>Wirkstoffgruppe</label><input type="text" id="edit-gruppe"></div>
 
             <div class="field full-width">
-                <label>Listen</label>
+                <label>Listen-Zugehörigkeit</label>
                 <div class="checkbox-group">
-                    <label><input type="checkbox" name="liste-zugehoerigkeit" value="Arzneimittelliste 1"> L1</label>
-                    <label><input type="checkbox" name="liste-zugehoerigkeit" value="Arzneimittelliste 2"> L2</label>
-                    <label><input type="checkbox" name="liste-zugehoerigkeit" value="NEF"> NEF</label>
+                    <label><input type="checkbox" name="liste-zugehoerigkeit" value="Arzneimittelliste 1"> Arzneimittelliste 1</label>
+                    <label><input type="checkbox" name="liste-zugehoerigkeit" value="Arzneimittelliste 2"> Arzneimittelliste 2</label>
+                    <label><input type="checkbox" name="liste-zugehoerigkeit" value="Arzneimittelliste NEF"> Arzneimittelliste NEF</label>
                 </div>
             </div>
 
@@ -103,7 +100,7 @@
             <div class="field"><label>Wirkdauer</label><input type="text" id="edit-dauer"></div>
 
             <div class="field full-width">
-                <label>Applikation</label>
+                <label>Verabreichungsweg (Applikation)</label>
                 <div class="checkbox-group">
                     <label><input type="checkbox" name="route" value="i.v."> i.v.</label>
                     <label><input type="checkbox" name="route" value="i.m."> i.m.</label>
@@ -147,7 +144,7 @@
     let isAdmin = false;
     let sortSpalte = 'handelsname';
     let sortAufsteigend = true;
-    const MASTER_PW = "RKNÖ"; // Bitte wieder anpassen
+    const MASTER_PW = "RKNÖ"; 
 
     function login() {
         const pw = prompt("Admin-Passwort:");
@@ -180,9 +177,15 @@
         daten.forEach(med => {
             const row = tbody.insertRow();
             row.onclick = () => zeigeDetails(med.id);
-            const listen = med.listen ? med.listen.split(', ').map(l => `<span class="badge badge-${l.toLowerCase().replace(/\s/g, "")}">${l}</span>`).join("") : "";
+            
+            // Verabreichungsweg Badges
             const routes = med.routen ? med.routen.split(', ').map(r => `<span class="badge badge-route">${r}</span>`).join("") : "";
-            row.innerHTML = `<td><strong>${med.handelsname}</strong></td><td class="hide-mobile">${med.wirkstoff || ''}</td><td>${routes}</td><td>${listen}</td>`;
+            
+            row.innerHTML = `
+                <td><strong>${med.handelsname}</strong></td>
+                <td class="hide-mobile">${med.wirkstoff || ''}</td>
+                <td>${routes}</td>
+            `;
         });
     }
 
@@ -193,13 +196,11 @@
             sortSpalte = spalte;
             sortAufsteigend = true;
         }
-
-        ['handelsname', 'wirkstoff', 'routen', 'listen'].forEach(s => {
+        ['handelsname', 'wirkstoff', 'routen'].forEach(s => {
             const el = document.getElementById('sort-' + s);
             if(el) el.innerText = '';
         });
         document.getElementById('sort-' + spalte).innerText = sortAufsteigend ? ' ▲' : ' ▼';
-
         applySort(gefilterteMedikamente);
         renderTabelle(gefilterteMedikamente);
     }
@@ -219,7 +220,7 @@
         gefilterteMedikamente = medikamente.filter(m => {
             const volltext = [
                 m.handelsname, m.wirkstoff, m.gruppe, m.indikation, m.kontra, 
-                m.dosierung, m.tipp, m.nebenwirkungen, m.wirkweise, m.ampulle
+                m.dosierung, m.tipp, m.nebenwirkungen, m.wirkweise, m.ampulle, m.listen, m.routen
             ].join(" ").toLowerCase();
             return volltext.includes(q);
         });

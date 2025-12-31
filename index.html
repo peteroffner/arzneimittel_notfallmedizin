@@ -238,7 +238,19 @@
     async function speichern() {
         if(!isAdmin) return;
 
-        // 1. Daten aus den Feldern sammeln
+        // Button deaktivieren, um Mehrfach-Klicks zu verhindern
+        const saveBtn = document.getElementById('save-btn');
+        saveBtn.disabled = true;
+        saveBtn.innerText = "⏳ Speichert...";
+
+        // Werte explizit auslesen
+        const gewaehlteListen = Array.from(document.querySelectorAll('input[name="liste-zugehoerigkeit"]:checked'))
+            .map(cb => cb.value)
+            .join(', ');
+        const gewaehlteRouten = Array.from(document.querySelectorAll('input[name="route"]:checked'))
+            .map(cb => cb.value)
+            .join(', ');
+
         const daten = {
             handelsname: document.getElementById('edit-handelsname').value,
             wirkstoff: document.getElementById('edit-wirkstoff').value,
@@ -253,46 +265,32 @@
             link: document.getElementById('edit-link').value,
             nebenwirkungen: document.getElementById('edit-nebenwirkungen').value,
             wirkweise: document.getElementById('edit-wirkweise').value,
-            // Hier wichtig: Sicherstellen, dass die Checkboxen korrekt ausgelesen werden
-            listen: Array.from(document.querySelectorAll('input[name="liste-zugehoerigkeit"]:checked')).map(cb => cb.value).join(', '),
-            routen: Array.from(document.querySelectorAll('input[name="route"]:checked')).map(cb => cb.value).join(', ')
+            listen: gewaehlteListen,
+            routen: gewaehlteRouten
         };
 
-        let res;
-        if (aktuellesMedId) {
-            // Update bestehendes Medikament
-            res = await supabaseClient.from('medikamente').update(daten).eq('id', aktuellesMedId);
-        } else {
-            // Einfügen neues Medikament
-            res = await supabaseClient.from('medikamente').insert([daten]);
-        }
+        try {
+            let res;
+            if (aktuellesMedId) {
+                // UPDATE
+                res = await supabaseClient.from('medikamente').update(daten).eq('id', aktuellesMedId);
+            } else {
+                // INSERT (NEU)
+                res = await supabaseClient.from('medikamente').insert([daten]);
+            }
 
-        if (res.error) {
-            console.error("Fehler beim Speichern:", res.error);
-            alert("Fehler beim Speichern!");
-        } else {
-            // WICHTIG: Erst die Daten neu laden, dann das Fenster schließen
-            await ladeDaten(); 
+            if (res.error) throw res.error;
+
+            // Erfolg: Daten neu laden und UI aktualisieren
+            await ladeDaten();
             schliessen();
-            alert("Gespeichert!"); // Kurze Bestätigung
-        }
-    }
-
-    // Stelle sicher, dass ladeDaten die Anzeige auch wirklich triggert
-    async function ladeDaten() {
-        const statusDot = document.getElementById('sync-status');
-        if(statusDot) statusDot.classList.remove('online');
-
-        const { data, error } = await supabaseClient
-            .from('medikamente')
-            .select('*');
-
-        if (error) {
-            console.error("Fehler beim Laden:", error);
-        } else {
-            medikamente = data;
-            if(statusDot) statusDot.classList.add('online');
-            filterTabelle(); // Das aktualisiert die gefilterte Liste und das Rendering
+            
+        } catch (error) {
+            console.error("Speicherfehler:", error);
+            alert("Fehler beim Speichern: " + (error.message || "Unbekannter Fehler"));
+        } finally {
+            saveBtn.disabled = false;
+            saveBtn.innerText = "💾 Speichern";
         }
     }
 
@@ -331,13 +329,32 @@
 
     function neuesMedikament() {
         aktuellesMedId = null;
-        document.querySelectorAll('.modal-content input, .modal-content textarea').forEach(el => { el.value = ""; el.readOnly = false; });
-        document.querySelectorAll('input[type="checkbox"]').forEach(cb => { cb.checked = false; cb.disabled = false; });
+        // Alle Textfelder leeren
+        document.querySelectorAll('.modal-content input, .modal-content textarea').forEach(el => {
+            el.value = "";
+            el.readOnly = false;
+        });
+        
+        // Alle Checkboxen explizit auf false setzen und aktivieren
+        document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            cb.checked = false;
+            cb.disabled = false;
+        });
+
+        document.getElementById('view-title').innerText = "Neues Medikament anlegen";
         document.getElementById('btn-open-link').style.display = 'none';
         document.getElementById('detail-view').style.display = 'block';
+        
+        // Fokus auf das erste Feld
+        setTimeout(() => document.getElementById('edit-handelsname').focus(), 100);
     }
 
-    function schliessen() { document.getElementById('detail-view').style.display = 'none'; }
+    function schliessen() {
+        document.getElementById('detail-view').style.display = 'none';
+        aktuellesMedId = null;
+        // Checkboxen zur Sicherheit beim Schließen leeren
+        document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+    }
     function initAutoGrow() {
         document.querySelectorAll('.auto-grow').forEach(t => {
             t.addEventListener('input', function() { this.style.height = 'auto'; this.style.height = (this.scrollHeight) + 'px'; });
@@ -351,4 +368,5 @@
 </script>
 </body>
 </html>
+
 

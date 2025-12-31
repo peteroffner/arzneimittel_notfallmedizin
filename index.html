@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Notfallmedizin - Cloud DB</title>
+    <title>Arzneimitteldatenbank - Pro</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --primary: #d32f2f; --secondary: #455a64; --bg: #f4f7f6; --accent: #1976d2; }
@@ -49,7 +49,7 @@
 
 <div class="container">
     <div class="header-box">
-        <h1><span id="sync-status" class="status-dot"></span> Arzneimitteldatenbank Notfallmedizin</h1>
+        <h1><span id="sync-status" class="status-dot"></span> Arzneimitteldatenbank</h1>
         <div id="auth-controls">
             <button id="login-btn" class="btn btn-login" onclick="login()">🔑 Admin</button>
             <button id="logout-btn" class="btn btn-cancel admin-only" onclick="logout()">Abmelden</button>
@@ -133,21 +133,35 @@
     let isAdmin = false;
     let sortSpalte = 'handelsname';
     let sortAufsteigend = true;
-    const MASTER_PW = "RKNÖ"; 
+    const MASTER_PW = "1234"; // Dein Passwort
+
+    // Check Login beim Laden
+    function checkAuth() {
+        const storedPw = sessionStorage.getItem('adminPw');
+        if(storedPw === MASTER_PW) {
+            applyLogin();
+        }
+    }
 
     function login() {
         const pw = prompt("Admin-Passwort:");
         if(pw === MASTER_PW) {
-            isAdmin = true;
-            document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'flex');
-            document.getElementById('login-btn').style.display = 'none';
+            sessionStorage.setItem('adminPw', pw);
+            applyLogin();
+        } else if (pw !== null) {
+            alert("Falsches Passwort.");
         }
     }
 
+    function applyLogin() {
+        isAdmin = true;
+        document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'flex');
+        document.getElementById('login-btn').style.display = 'none';
+    }
+
     function logout() {
-        isAdmin = false;
-        document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
-        document.getElementById('login-btn').style.display = 'flex';
+        sessionStorage.removeItem('adminPw');
+        window.location.reload();
     }
 
     async function ladeDaten() {
@@ -181,7 +195,9 @@
     async function speichern() {
         if(!isAdmin) return;
         const btn = document.getElementById('save-btn');
+        const isNeu = !aktuellesMedId;
         btn.disabled = true;
+        btn.innerText = "⏳ Speichert...";
 
         const listenVal = Array.from(document.querySelectorAll('input[name="liste-zugehoerigkeit"]:checked')).map(cb => cb.value).join(', ');
         const routenVal = Array.from(document.querySelectorAll('input[name="route"]:checked')).map(cb => cb.value).join(', ');
@@ -214,12 +230,19 @@
         }
 
         if (error) {
-            alert("Fehler: " + error.message);
+            alert("Fehler beim Speichern: " + error.message);
             btn.disabled = false;
+            btn.innerText = "💾 Speichern";
         } else {
-            await ladeDaten();
-            schliessen();
-            btn.disabled = false;
+            if (isNeu) {
+                // Bei neuem Med: Kompletter Reload für Synchronität
+                window.location.reload();
+            } else {
+                await ladeDaten();
+                schliessen();
+                btn.disabled = false;
+                btn.innerText = "💾 Speichern";
+            }
         }
     }
 
@@ -236,10 +259,10 @@
             el.readOnly = !isAdmin;
         });
 
-        const rList = med.routen ? med.routen.split(', ') : [];
+        const rList = (med.routen || "").split(', ');
         document.querySelectorAll('input[name="route"]').forEach(cb => { cb.checked = rList.includes(cb.value); cb.disabled = !isAdmin; });
         
-        const lList = med.listen ? med.listen.split(', ') : [];
+        const lList = (med.listen || "").split(', ');
         document.querySelectorAll('input[name="liste-zugehoerigkeit"]').forEach(cb => { cb.checked = lList.includes(cb.value); cb.disabled = !isAdmin; });
 
         const linkBtn = document.getElementById('btn-open-link');
@@ -287,8 +310,9 @@
 
     async function loeschen() {
         if(isAdmin && confirm("Löschen?")) {
-            await supabaseClient.from('medikamente').delete().eq('id', aktuellesMedId);
-            await ladeDaten(); schliessen();
+            const { error } = await supabaseClient.from('medikamente').delete().eq('id', aktuellesMedId);
+            if(error) alert(error.message);
+            else { await ladeDaten(); schliessen(); }
         }
     }
 
@@ -301,6 +325,7 @@
         setTimeout(() => { document.querySelectorAll('.auto-grow').forEach(t => { t.style.height = 'auto'; t.style.height = (t.scrollHeight) + 'px'; }); }, 50);
     }
 
+    checkAuth();
     ladeDaten();
     initAutoGrow();
 </script>

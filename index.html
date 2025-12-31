@@ -3,70 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Notfallmedizin - Arzneimittel-DB</title>
+    <title>Notfallmedizin - Cloud-Ready DB</title>
     <style>
         :root { --primary: #d32f2f; --secondary: #455a64; --bg: #f4f7f6; --accent: #1976d2; }
-        body { font-family: 'Segoe UI', Roboto, sans-serif; background-color: var(--bg); padding: 20px; color: #333; }
-        .container { max-width: 1150px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        body { font-family: 'Segoe UI', Roboto, sans-serif; background-color: var(--bg); padding: 10px; color: #333; }
+        .container { max-width: 1150px; margin: auto; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         
-        h1 { color: var(--primary); text-align: center; margin-bottom: 30px; }
+        h1 { color: var(--primary); text-align: center; font-size: 1.5rem; }
 
-        .toolbar { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-        #search-bar { flex-grow: 1; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; }
+        .toolbar { display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap; }
+        #search-bar { flex-grow: 1; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; min-width: 200px; }
         
-        .btn { padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; color: white; transition: 0.3s; display: flex; align-items: center; gap: 8px; }
+        .btn { padding: 10px 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; color: white; transition: 0.2s; display: flex; align-items: center; gap: 5px; font-size: 14px; }
         .btn-add { background-color: var(--primary); }
         .btn-save { background-color: #2e7d32; }
         .btn-cancel { background-color: #757575; }
         .btn-delete { background-color: #c62828; }
+        .btn-sync { background-color: var(--secondary); }
 
-        .med-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        .med-table th { background: #eee; padding: 12px; text-align: left; }
-        .med-table td { padding: 12px; border-bottom: 1px solid #eee; }
+        .med-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+        .med-table th { background: #eee; padding: 10px; text-align: left; }
+        .med-table td { padding: 10px; border-bottom: 1px solid #eee; }
         .med-table tr:hover { background-color: #fff4f4; cursor: pointer; }
         
-        .badge { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; text-transform: uppercase; color: white; margin-right: 5px; white-space: nowrap; display: inline-block; margin-bottom: 2px; }
+        .badge { padding: 3px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; text-transform: uppercase; color: white; margin-right: 3px; display: inline-block; }
         .badge-liste1 { background: var(--accent); }
         .badge-liste2 { background: #7b1fa2; }
         .badge-nef { background: #e65100; }
-        .badge-route { background: #607d8b; font-size: 10px; }
+        .badge-route { background: #607d8b; }
 
-        #detail-view { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); overflow-y: auto; z-index: 100; }
-        .modal-content { background: white; max-width: 900px; margin: 20px auto; padding: 30px; border-radius: 12px; }
+        /* Modal */
+        #detail-view { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); overflow-y: auto; z-index: 100; }
+        .modal-content { background: white; max-width: 850px; margin: 10px auto; padding: 20px; border-radius: 12px; }
         
-        .grid-form { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+        .grid-form { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
         .full-width { grid-column: span 3; }
-        .field label { display: block; font-weight: bold; margin-bottom: 5px; color: #555; font-size: 13px; text-transform: uppercase; }
-        .field input, .field textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-family: inherit; }
+        .field label { display: block; font-weight: bold; margin-bottom: 3px; color: #555; font-size: 12px; }
+        .field input, .field textarea { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
         
         .highlight-field { background-color: #fffde7; border: 1px solid #fbc02d !important; }
         .tip-field { background-color: #e1f5fe; border: 1px solid #03a9f4 !important; }
 
-        .checkbox-group { display: flex; gap: 15px; padding: 10px; background: #f9f9f9; border-radius: 6px; flex-wrap: wrap; border: 1px solid #eee; }
-        .checkbox-item { display: flex; align-items: center; gap: 6px; font-weight: bold; cursor: pointer; font-size: 14px; }
-        .checkbox-item input { width: 18px; height: 18px; cursor: pointer; }
+        .checkbox-group { display: flex; gap: 10px; padding: 8px; background: #f9f9f9; border-radius: 6px; flex-wrap: wrap; }
+        .checkbox-item { display: flex; align-items: center; gap: 4px; font-size: 13px; font-weight: bold; }
 
-        .list-selector { border-left: 4px solid var(--primary); }
-
-        @media (max-width: 750px) { .grid-form { grid-template-columns: 1fr; } .full-width { grid-column: span 1; } }
+        @media (max-width: 600px) { 
+            .grid-form { grid-template-columns: 1fr; } 
+            .full-width { grid-column: span 1; }
+            .hide-mobile { display: none; }
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>Arzneimittelverwaltung Notfallmedizin</h1>
+    <h1>🚑 Arzneimittel DB</h1>
 
     <div class="toolbar">
-        <input type="text" id="search-bar" placeholder="Suche Name, Wirkstoff, Liste..." onkeyup="filterTabelle()">
-        <button class="btn btn-add" onclick="neuesMedikament()">✚ Medikament hinzufügen</button>
+        <input type="text" id="search-bar" placeholder="Suchen..." onkeyup="filterTabelle()">
+        <button class="btn btn-add" onclick="neuesMedikament()">✚ Neu</button>
+        <button class="btn btn-sync" onclick="exportData()">📤 Backup</button>
+        <button class="btn btn-sync" onclick="document.getElementById('importFile').click()">📥 Import</button>
+        <input type="file" id="importFile" style="display:none" onchange="importData(event)">
     </div>
 
     <table class="med-table">
         <thead>
             <tr>
-                <th>Handelsname</th>
-                <th>Wirkstoff</th>
-                <th>Applikation</th>
+                <th>Name</th>
+                <th class="hide-mobile">Wirkstoff</th>
                 <th>Listen</th>
             </tr>
         </thead>
@@ -76,14 +81,14 @@
 
 <div id="detail-view">
     <div class="modal-content">
-        <h2 id="view-title" style="margin-top:0; color: var(--primary);">Medikament bearbeiten</h2>
+        <h2 id="view-title" style="color: var(--primary); margin-bottom:15px;">Bearbeiten</h2>
         <div class="grid-form">
             <div class="field">
                 <label>Handelsname</label>
                 <input type="text" id="edit-handelsname">
             </div>
             <div class="field">
-                <label>Wirkstoffname</label>
+                <label>Wirkstoff</label>
                 <input type="text" id="edit-wirkstoff">
             </div>
             <div class="field">
@@ -91,12 +96,12 @@
                 <input type="text" id="edit-gruppe">
             </div>
 
-            <div class="field full-width list-selector">
-                <label>Zugehörigkeit Arzneimittellisten (Mehrfachwahl möglich)</label>
+            <div class="field full-width">
+                <label>Listen-Zugehörigkeit</label>
                 <div class="checkbox-group">
-                    <label class="checkbox-item"><input type="checkbox" name="liste-zugehoerigkeit" value="Liste 1"> Arzneimittelliste 1</label>
-                    <label class="checkbox-item"><input type="checkbox" name="liste-zugehoerigkeit" value="Liste 2"> Arzneimittelliste 2</label>
-                    <label class="checkbox-item"><input type="checkbox" name="liste-zugehoerigkeit" value="NEF"> Arzneimittelliste NEF</label>
+                    <label class="checkbox-item"><input type="checkbox" name="liste-zugehoerigkeit" value="Liste 1"> Liste 1</label>
+                    <label class="checkbox-item"><input type="checkbox" name="liste-zugehoerigkeit" value="Liste 2"> Liste 2</label>
+                    <label class="checkbox-item"><input type="checkbox" name="liste-zugehoerigkeit" value="NEF"> NEF</label>
                 </div>
             </div>
 
@@ -108,11 +113,9 @@
                 <label>Wirkdauer</label>
                 <input type="text" id="edit-dauer">
             </div>
-            <div class="field">
-                </div>
 
             <div class="field full-width">
-                <label>Verabreichungsmöglichkeit</label>
+                <label>Verabreichung</label>
                 <div class="checkbox-group">
                     <label class="checkbox-item"><input type="checkbox" name="route" value="i.v."> i.v.</label>
                     <label class="checkbox-item"><input type="checkbox" name="route" value="i.m."> i.m.</label>
@@ -122,36 +125,15 @@
                 </div>
             </div>
 
-            <div class="field full-width">
-                <label>Indikation</label>
-                <textarea id="edit-indikation" rows="2"></textarea>
-            </div>
-            <div class="field full-width">
-                <label style="color: #c62828;">Kontraindikationen</label>
-                <textarea id="edit-kontra" rows="2"></textarea>
-            </div>
-            
-            <div class="field full-width">
-                <label>Dosierungshinweis</label>
-                <textarea id="edit-dosierung" class="highlight-field" rows="3"></textarea>
-            </div>
-
-            <div class="field full-width">
-                <label>Praxistipp / Bemerkung</label>
-                <textarea id="edit-tipp" class="tip-field" rows="2"></textarea>
-            </div>
-
-            <div class="field full-width">
-                <label>Nebenwirkungen</label>
-                <textarea id="edit-nebenwirkungen" rows="2"></textarea>
-            </div>
-            <div class="field full-width">
-                <label>Wirkweise</label>
-                <textarea id="edit-wirkweise" rows="2"></textarea>
-            </div>
+            <div class="field full-width"><label>Indikation</label><textarea id="edit-indikation" rows="2"></textarea></div>
+            <div class="field full-width"><label style="color:red">Kontraindikationen</label><textarea id="edit-kontra" rows="2"></textarea></div>
+            <div class="field full-width"><label>Dosierungshinweis</label><textarea id="edit-dosierung" class="highlight-field" rows="3"></textarea></div>
+            <div class="field full-width"><label>Praxistipp</label><textarea id="edit-tipp" class="tip-field" rows="2"></textarea></div>
+            <div class="field full-width"><label>Nebenwirkungen</label><textarea id="edit-nebenwirkungen" rows="2"></textarea></div>
+            <div class="field full-width"><label>Wirkweise</label><textarea id="edit-wirkweise" rows="2"></textarea></div>
         </div>
 
-        <div class="toolbar" style="margin-top: 25px; border-top: 2px solid #eee; padding-top: 20px;">
+        <div class="toolbar" style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px;">
             <button class="btn btn-save" onclick="speichern()">💾 Speichern</button>
             <button class="btn btn-delete" onclick="loeschen()">🗑️ Löschen</button>
             <button class="btn btn-cancel" onclick="schliessen()">Abbrechen</button>
@@ -161,26 +143,12 @@
 
 <script>
     let medikamente = [];
-    const STORAGE_KEY = "notfall_med_multi_v5";
+    const STORAGE_KEY = "notfall_med_final_v1";
     let aktuellesMedId = null;
 
     function ladeDaten() {
-        const gespeicherteDaten = localStorage.getItem(STORAGE_KEY);
-        if (gespeicherteDaten) {
-            medikamente = JSON.parse(gespeicherteDaten);
-        } else {
-            // Beispiel mit mehreren Listen
-            medikamente = [{
-                id: 1, 
-                listen: ["Liste 1", "NEF"], 
-                handelsname: "Aspirin", 
-                wirkstoff: "ASS", 
-                routen: ["p.o.", "i.v."],
-                dosierung: "500mg p.o. / 250-500mg i.v.",
-                indikation: "ACS"
-            }];
-            speichereDaten();
-        }
+        const data = localStorage.getItem(STORAGE_KEY);
+        medikamente = data ? JSON.parse(data) : [];
         renderTabelle(medikamente);
     }
 
@@ -194,30 +162,15 @@
         daten.forEach(med => {
             const row = tbody.insertRow();
             row.onclick = () => zeigeDetails(med.id);
-            
-            // Listen-Badges generieren
-            const listenBadges = (med.listen || []).map(l => {
-                const cls = "badge badge-" + l.toLowerCase().replace(" ", "");
-                return `<span class="${cls}">${l}</span>`;
-            }).join("");
-
-            const routenBadges = (med.routen || []).map(r => `<span class="badge badge-route">${r}</span>`).join("");
-            
-            row.innerHTML = `
-                <td><strong>${med.handelsname || 'Unbenannt'}</strong></td>
-                <td>${med.wirkstoff || '-'}</td>
-                <td>${routenBadges}</td>
-                <td>${listenBadges}</td>
-            `;
+            const listen = (med.listen || []).map(l => `<span class="badge badge-${l.toLowerCase().replace(" ", "")}">${l}</span>`).join("");
+            row.innerHTML = `<td><strong>${med.handelsname || 'Neu'}</strong></td><td class="hide-mobile">${med.wirkstoff || ''}</td><td>${listen}</td>`;
         });
     }
 
     function filterTabelle() {
         const query = document.getElementById('search-bar').value.toLowerCase();
         const gefiltert = medikamente.filter(m => 
-            (m.handelsname || "").toLowerCase().includes(query) || 
-            (m.wirkstoff || "").toLowerCase().includes(query) ||
-            (m.listen || []).some(l => l.toLowerCase().includes(query))
+            (m.handelsname || "").toLowerCase().includes(query) || (m.wirkstoff || "").toLowerCase().includes(query)
         );
         renderTabelle(gefiltert);
     }
@@ -225,88 +178,60 @@
     function zeigeDetails(id) {
         const med = medikamente.find(m => m.id === id);
         aktuellesMedId = id;
-
-        document.getElementById('edit-handelsname').value = med.handelsname || "";
-        document.getElementById('edit-wirkstoff').value = med.wirkstoff || "";
-        document.getElementById('edit-gruppe').value = med.gruppe || "";
-        document.getElementById('edit-eintritt').value = med.eintritt || "";
-        document.getElementById('edit-dauer').value = med.dauer || "";
-        document.getElementById('edit-indikation').value = med.indikation || "";
-        document.getElementById('edit-kontra').value = med.kontra || "";
-        document.getElementById('edit-dosierung').value = med.dosierung || "";
-        document.getElementById('edit-tipp').value = med.tipp || "";
-        document.getElementById('edit-nebenwirkungen').value = med.nebenwirkungen || "";
-        document.getElementById('edit-wirkweise').value = med.wirkweise || "";
-
-        // Checkboxen für Routen
-        document.querySelectorAll('input[name="route"]').forEach(cb => {
-            cb.checked = med.routen ? med.routen.includes(cb.value) : false;
+        document.querySelectorAll('.modal-content input[type="text"], .modal-content textarea').forEach(el => {
+            const field = el.id.replace('edit-', '');
+            el.value = med[field] || "";
         });
-
-        // Checkboxen für Listen-Zugehörigkeit
-        document.querySelectorAll('input[name="liste-zugehoerigkeit"]').forEach(cb => {
-            cb.checked = med.listen ? med.listen.includes(cb.value) : false;
-        });
-
+        document.querySelectorAll('input[name="route"]').forEach(cb => cb.checked = med.routen?.includes(cb.value));
+        document.querySelectorAll('input[name="liste-zugehoerigkeit"]').forEach(cb => cb.checked = med.listen?.includes(cb.value));
         document.getElementById('detail-view').style.display = 'block';
     }
 
     function speichern() {
-        const ausgewaehlteRouten = Array.from(document.querySelectorAll('input[name="route"]:checked')).map(cb => cb.value);
-        const ausgewaehlteListen = Array.from(document.querySelectorAll('input[name="liste-zugehoerigkeit"]:checked')).map(cb => cb.value);
-
         const daten = {
             id: aktuellesMedId || Date.now(),
             handelsname: document.getElementById('edit-handelsname').value,
             wirkstoff: document.getElementById('edit-wirkstoff').value,
             gruppe: document.getElementById('edit-gruppe').value,
-            listen: ausgewaehlteListen,
             eintritt: document.getElementById('edit-eintritt').value,
             dauer: document.getElementById('edit-dauer').value,
-            routen: ausgewaehlteRouten,
             indikation: document.getElementById('edit-indikation').value,
             kontra: document.getElementById('edit-kontra').value,
             dosierung: document.getElementById('edit-dosierung').value,
             tipp: document.getElementById('edit-tipp').value,
             nebenwirkungen: document.getElementById('edit-nebenwirkungen').value,
-            wirkweise: document.getElementById('edit-wirkweise').value
+            wirkweise: document.getElementById('edit-wirkweise').value,
+            routen: Array.from(document.querySelectorAll('input[name="route"]:checked')).map(cb => cb.value),
+            listen: Array.from(document.querySelectorAll('input[name="liste-zugehoerigkeit"]:checked')).map(cb => cb.value)
         };
-
-        const index = medikamente.findIndex(m => m.id === aktuellesMedId);
-        if (index > -1) {
-            medikamente[index] = daten;
-        } else {
-            medikamente.push(daten);
-        }
-
-        speichereDaten();
-        filterTabelle();
-        schliessen();
+        const idx = medikamente.findIndex(m => m.id === aktuellesMedId);
+        if (idx > -1) medikamente[idx] = daten; else medikamente.push(daten);
+        speichereDaten(); renderTabelle(medikamente); schliessen();
     }
 
-    function loeschen() {
-        if(confirm("Eintrag wirklich löschen?")) {
-            medikamente = medikamente.filter(m => m.id !== aktuellesMedId);
-            speichereDaten();
-            filterTabelle();
-            schliessen();
-        }
+    function loeschen() { if(confirm("Löschen?")) { medikamente = medikamente.filter(m => m.id !== aktuellesMedId); speichereDaten(); renderTabelle(medikamente); schliessen(); } }
+    function neuesMedikament() { aktuellesMedId = null; document.querySelectorAll('.modal-content input[type="text"], .modal-content textarea').forEach(el => el.value = ""); document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false); document.getElementById('detail-view').style.display = 'block'; }
+    function schliessen() { document.getElementById('detail-view').style.display = 'none'; }
+
+    // Backup Funktionen
+    function exportData() {
+        const blob = new Blob([JSON.stringify(medikamente)], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = 'medikamente_backup.json'; a.click();
     }
 
-    function neuesMedikament() {
-        aktuellesMedId = null;
-        document.querySelectorAll('.modal-content input[type="text"], .modal-content textarea').forEach(el => el.value = "");
-        document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
-        document.getElementById('detail-view').style.display = 'block';
-    }
-
-    function schliessen() {
-        document.getElementById('detail-view').style.display = 'none';
+    function importData(event) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            medikamente = JSON.parse(e.target.result);
+            speichereDaten(); renderTabelle(medikamente);
+            alert("Daten erfolgreich importiert!");
+        };
+        reader.readAsText(event.target.files[0]);
     }
 
     ladeDaten();
 </script>
-
 </body>
-
 </html>

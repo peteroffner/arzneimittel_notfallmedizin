@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Arzneimittel Notfallmedizin - Cloud DB</title>
+    <title>Notfallmedizin - Cloud DB</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --primary: #d32f2f; --secondary: #455a64; --bg: #f4f7f6; --accent: #1976d2; }
@@ -19,23 +19,19 @@
         .btn-cancel { background-color: #757575; }
         .btn-delete { background-color: #c62828; }
         .btn-login { background-color: var(--secondary); }
-        .btn-link { background-color: var(--accent); margin-top: 5px; justify-content: center; width: 100%; box-sizing: border-box; }
+        .btn-link { background-color: var(--accent); margin-top: 8px; justify-content: center; width: 100%; box-sizing: border-box; }
         .admin-only { display: none; }
         .status-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; background: #ccc; margin-right: 5px; }
         .online { background: #4caf50; }
-        
         .med-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
         .med-table th { background: #eee; padding: 12px 10px; text-align: left; border-bottom: 2px solid #ddd; cursor: pointer; user-select: none; }
-        .med-table th:hover { background: #e0e0e0; }
         .med-table td { padding: 10px; border-bottom: 1px solid #eee; vertical-align: middle; }
         .med-table tr:hover { background-color: #fff4f4; cursor: pointer; }
-        
         .badge { padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; text-transform: uppercase; color: white !important; margin-right: 4px; display: inline-block; white-space: nowrap; margin-bottom: 2px; }
         .badge-al1 { background-color: #1976d2 !important; }
         .badge-al2 { background-color: #7b1fa2 !important; }
         .badge-nef { background-color: #e65100 !important; }
         .badge-route { background-color: #607d8b !important; }
-
         #detail-view { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); overflow-y: auto; z-index: 100; }
         .modal-content { background: white; max-width: 850px; margin: 10px auto; padding: 20px; border-radius: 12px; }
         .grid-form { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
@@ -53,25 +49,23 @@
 
 <div class="container">
     <div class="header-box">
-        <h1><span id="sync-status" class="status-dot"></span> Arzneimittel Notfallmedizin</h1>
+        <h1><span id="sync-status" class="status-dot"></span> Arzneimitteldatenbank Notfallmedizin</h1>
         <div id="auth-controls">
             <button id="login-btn" class="btn btn-login" onclick="login()">🔑 Admin</button>
             <button id="logout-btn" class="btn btn-cancel admin-only" onclick="logout()">Abmelden</button>
         </div>
     </div>
-
     <div class="toolbar">
         <input type="text" id="search-bar" placeholder="Suchen..." onkeyup="filterTabelle()">
         <button class="btn btn-add admin-only" onclick="neuesMedikament()">✚ Neu</button>
     </div>
-
     <table class="med-table">
         <thead>
             <tr>
                 <th onclick="sortiereTabelle('handelsname')">Handelsname <span id="sort-handelsname">▲</span></th>
-                <th onclick="sortiereTabelle('wirkstoff')" class="hide-mobile">Wirkstoff <span id="sort-wirkstoff"></span></th>
-                <th onclick="sortiereTabelle('routen')">Verabreichung <span id="sort-routen"></span></th>
-                <th onclick="sortiereTabelle('listen')">Listen <span id="sort-listen"></span></th>
+                <th onclick="sortiereTabelle('wirkstoff')" class="hide-mobile">Wirkstoff</th>
+                <th onclick="sortiereTabelle('routen')">Verabreichung</th>
+                <th onclick="sortiereTabelle('listen')">Listen</th>
             </tr>
         </thead>
         <tbody id="med-tbody"></tbody>
@@ -85,7 +79,6 @@
             <div class="field"><label>Handelsname</label><input type="text" id="edit-handelsname"></div>
             <div class="field"><label>Wirkstoff</label><input type="text" id="edit-wirkstoff"></div>
             <div class="field"><label>Wirkstoffgruppe</label><input type="text" id="edit-gruppe"></div>
-
             <div class="field full-width">
                 <label>Listen-Zugehörigkeit</label>
                 <div class="checkbox-group">
@@ -94,11 +87,9 @@
                     <label><input type="checkbox" name="liste-zugehoerigkeit" value="Arzneimittelliste NEF"> Arzneimittelliste NEF</label>
                 </div>
             </div>
-
             <div class="field"><label>Ampulle / Konzentration</label><input type="text" id="edit-ampulle"></div>
             <div class="field"><label>Wirkeintritt</label><input type="text" id="edit-eintritt"></div>
             <div class="field"><label>Wirkdauer</label><input type="text" id="edit-dauer"></div>
-
             <div class="field full-width">
                 <label>Verabreichungsweg (Applikation)</label>
                 <div class="checkbox-group">
@@ -109,22 +100,20 @@
                     <label><input type="checkbox" name="route" value="p.o."> p.o.</label>
                 </div>
             </div>
-
             <div class="field full-width"><label>Indikation</label><textarea id="edit-indikation" class="auto-grow"></textarea></div>
             <div class="field full-width"><label style="color:red">Kontraindikationen</label><textarea id="edit-kontra" class="auto-grow"></textarea></div>
             <div class="field full-width"><label>Dosierung</label><textarea id="edit-dosierung" class="highlight-field auto-grow"></textarea></div>
             <div class="field full-width"><label>Praxistipp / Bemerkung</label><textarea id="edit-tipp" class="tip-field auto-grow"></textarea></div>
-            
             <div class="field full-width">
                 <label>Externer Verweis (URL)</label>
-                <input type="text" id="edit-link" placeholder="https://...">
-                <a id="btn-open-link" href="#" target="_blank" class="btn btn-link" style="display:none;">🔗 Link öffnen</a>
+                <div style="display: flex; flex-direction: column;">
+                    <input type="text" id="edit-link" placeholder="https://...">
+                    <a id="btn-open-link" href="#" target="_blank" class="btn btn-link" style="display:none;">🔗 Link öffnen</a>
+                </div>
             </div>
-
             <div class="field full-width"><label>Nebenwirkungen</label><textarea id="edit-nebenwirkungen" class="auto-grow"></textarea></div>
             <div class="field full-width"><label>Wirkweise</label><textarea id="edit-wirkweise" class="auto-grow"></textarea></div>
         </div>
-
         <div class="toolbar" style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px;">
             <button id="save-btn" class="btn btn-save admin-only" onclick="speichern()">💾 Speichern</button>
             <button id="delete-btn" class="btn btn-delete admin-only" onclick="loeschen()">🗑️ Löschen</button>
@@ -177,81 +166,27 @@
         daten.forEach(med => {
             const row = tbody.insertRow();
             row.onclick = () => zeigeDetails(med.id);
-            
-            const routes = med.routen ? med.routen.split(', ').map(r => `<span class="badge badge-route">${r}</span>`).join("") : "";
-            
-            // Listen Badges mit Abkürzung für die Übersicht
-            const listen = med.listen ? med.listen.split(', ').map(l => {
+            const rString = med.routen || "";
+            const routes = rString.split(', ').filter(r => r).map(r => `<span class="badge badge-route">${r}</span>`).join("");
+            const lString = med.listen || "";
+            const listen = lString.split(', ').filter(l => l).map(l => {
                 let short = l.includes('1') ? 'AL1' : (l.includes('2') ? 'AL2' : 'NEF');
                 let cls = l.includes('1') ? 'al1' : (l.includes('2') ? 'al2' : 'nef');
                 return `<span class="badge badge-${cls}">${short}</span>`;
-            }).join("") : "";
-            
-            row.innerHTML = `
-                <td><strong>${med.handelsname}</strong></td>
-                <td class="hide-mobile">${med.wirkstoff || ''}</td>
-                <td>${routes}</td>
-                <td>${listen}</td>
-            `;
+            }).join("");
+            row.innerHTML = `<td><strong>${med.handelsname}</strong></td><td class="hide-mobile">${med.wirkstoff || ''}</td><td>${routes}</td><td>${listen}</td>`;
         });
-    }
-
-    function sortiereTabelle(spalte) {
-        if (sortSpalte === spalte) {
-            sortAufsteigend = !sortAufsteigend;
-        } else {
-            sortSpalte = spalte;
-            sortAufsteigend = true;
-        }
-        ['handelsname', 'wirkstoff', 'routen', 'listen'].forEach(s => {
-            const el = document.getElementById('sort-' + s);
-            if(el) el.innerText = '';
-        });
-        document.getElementById('sort-' + spalte).innerText = sortAufsteigend ? ' ▲' : ' ▼';
-        applySort(gefilterteMedikamente);
-        renderTabelle(gefilterteMedikamente);
-    }
-
-    function applySort(liste) {
-        liste.sort((a, b) => {
-            let wertA = (a[sortSpalte] || "").toLowerCase();
-            let wertB = (b[sortSpalte] || "").toLowerCase();
-            if (wertA < wertB) return sortAufsteigend ? -1 : 1;
-            if (wertA > wertB) return sortAufsteigend ? 1 : -1;
-            return 0;
-        });
-    }
-
-    function filterTabelle() {
-        const q = document.getElementById('search-bar').value.toLowerCase();
-        gefilterteMedikamente = medikamente.filter(m => {
-            const volltext = [
-                m.handelsname, m.wirkstoff, m.gruppe, m.indikation, m.kontra, 
-                m.dosierung, m.tipp, m.nebenwirkungen, m.wirkweise, m.ampulle, m.listen, m.routen
-            ].join(" ").toLowerCase();
-            return volltext.includes(q);
-        });
-        applySort(gefilterteMedikamente);
-        renderTabelle(gefilterteMedikamente);
     }
 
     async function speichern() {
         if(!isAdmin) return;
+        const btn = document.getElementById('save-btn');
+        btn.disabled = true;
 
-        // Button deaktivieren, um Mehrfach-Klicks zu verhindern
-        const saveBtn = document.getElementById('save-btn');
-        saveBtn.disabled = true;
-        saveBtn.innerText = "⏳ Speichert...";
+        const listenVal = Array.from(document.querySelectorAll('input[name="liste-zugehoerigkeit"]:checked')).map(cb => cb.value).join(', ');
+        const routenVal = Array.from(document.querySelectorAll('input[name="route"]:checked')).map(cb => cb.value).join(', ');
 
-        // Werte explizit auslesen
-        const gewaehlteListen = Array.from(document.querySelectorAll('input[name="liste-zugehoerigkeit"]:checked'))
-            .map(cb => cb.value)
-            .join(', ');
-        const gewaehlteRouten = Array.from(document.querySelectorAll('input[name="route"]:checked'))
-            .map(cb => cb.value)
-            .join(', ');
-
-        const daten = {
+        const obj = {
             handelsname: document.getElementById('edit-handelsname').value,
             wirkstoff: document.getElementById('edit-wirkstoff').value,
             gruppe: document.getElementById('edit-gruppe').value,
@@ -265,96 +200,98 @@
             link: document.getElementById('edit-link').value,
             nebenwirkungen: document.getElementById('edit-nebenwirkungen').value,
             wirkweise: document.getElementById('edit-wirkweise').value,
-            listen: gewaehlteListen,
-            routen: gewaehlteRouten
+            listen: listenVal,
+            routen: routenVal
         };
 
-        try {
-            let res;
-            if (aktuellesMedId) {
-                // UPDATE
-                res = await supabaseClient.from('medikamente').update(daten).eq('id', aktuellesMedId);
-            } else {
-                // INSERT (NEU)
-                res = await supabaseClient.from('medikamente').insert([daten]);
-            }
+        let error;
+        if (aktuellesMedId) {
+            const res = await supabaseClient.from('medikamente').update(obj).eq('id', aktuellesMedId);
+            error = res.error;
+        } else {
+            const res = await supabaseClient.from('medikamente').insert([obj]);
+            error = res.error;
+        }
 
-            if (res.error) throw res.error;
-
-            // Erfolg: Daten neu laden und UI aktualisieren
+        if (error) {
+            alert("Fehler: " + error.message);
+            btn.disabled = false;
+        } else {
             await ladeDaten();
             schliessen();
-            
-        } catch (error) {
-            console.error("Speicherfehler:", error);
-            alert("Fehler beim Speichern: " + (error.message || "Unbekannter Fehler"));
-        } finally {
-            saveBtn.disabled = false;
-            saveBtn.innerText = "💾 Speichern";
-        }
-    }
-
-    async function loeschen() {
-        if(isAdmin && confirm("Wirklich löschen?")) {
-            await supabaseClient.from('medikamente').delete().eq('id', aktuellesMedId);
-            await ladeDaten(); schliessen();
+            btn.disabled = false;
         }
     }
 
     function zeigeDetails(id) {
         const med = medikamente.find(m => m.id === id);
+        if(!med) return;
         aktuellesMedId = id;
-        const felder = ['handelsname', 'wirkstoff', 'gruppe', 'ampulle', 'eintritt', 'dauer', 'indikation', 'kontra', 'dosierung', 'tipp', 'nebenwirkungen', 'wirkweise', 'link'];
-        felder.forEach(f => {
+        document.getElementById('view-title').innerText = med.handelsname;
+        
+        const fields = ['handelsname', 'wirkstoff', 'gruppe', 'ampulle', 'eintritt', 'dauer', 'indikation', 'kontra', 'dosierung', 'tipp', 'nebenwirkungen', 'wirkweise', 'link'];
+        fields.forEach(f => {
             const el = document.getElementById('edit-' + f);
             el.value = med[f] || "";
             el.readOnly = !isAdmin;
         });
 
-        const linkBtn = document.getElementById('btn-open-link');
-        if(med.link && med.link.startsWith('http')) {
-            linkBtn.href = med.link;
-            linkBtn.style.display = 'flex';
-        } else {
-            linkBtn.style.display = 'none';
-        }
+        const rList = med.routen ? med.routen.split(', ') : [];
+        document.querySelectorAll('input[name="route"]').forEach(cb => { cb.checked = rList.includes(cb.value); cb.disabled = !isAdmin; });
+        
+        const lList = med.listen ? med.listen.split(', ') : [];
+        document.querySelectorAll('input[name="liste-zugehoerigkeit"]').forEach(cb => { cb.checked = lList.includes(cb.value); cb.disabled = !isAdmin; });
 
-        const routes = med.routen ? med.routen.split(', ') : [];
-        document.querySelectorAll('input[name="route"]').forEach(cb => { cb.checked = routes.includes(cb.value); cb.disabled = !isAdmin; });
-        const lists = med.listen ? med.listen.split(', ') : [];
-        document.querySelectorAll('input[name="liste-zugehoerigkeit"]').forEach(cb => { cb.checked = lists.includes(cb.value); cb.disabled = !isAdmin; });
+        const linkBtn = document.getElementById('btn-open-link');
+        if(med.link && med.link.includes('http')) { linkBtn.href = med.link; linkBtn.style.display = 'flex'; } else { linkBtn.style.display = 'none'; }
+        
         document.getElementById('detail-view').style.display = 'block';
         updateAllTextareaHeights();
     }
 
     function neuesMedikament() {
         aktuellesMedId = null;
-        // Alle Textfelder leeren
-        document.querySelectorAll('.modal-content input, .modal-content textarea').forEach(el => {
-            el.value = "";
-            el.readOnly = false;
-        });
-        
-        // Alle Checkboxen explizit auf false setzen und aktivieren
-        document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-            cb.checked = false;
-            cb.disabled = false;
-        });
-
-        document.getElementById('view-title').innerText = "Neues Medikament anlegen";
+        document.getElementById('view-title').innerText = "Neues Medikament";
+        document.querySelectorAll('.modal-content input, .modal-content textarea').forEach(el => { el.value = ""; el.readOnly = false; });
+        document.querySelectorAll('input[type="checkbox"]').forEach(cb => { cb.checked = false; cb.disabled = false; });
         document.getElementById('btn-open-link').style.display = 'none';
         document.getElementById('detail-view').style.display = 'block';
-        
-        // Fokus auf das erste Feld
-        setTimeout(() => document.getElementById('edit-handelsname').focus(), 100);
     }
 
-    function schliessen() {
-        document.getElementById('detail-view').style.display = 'none';
-        aktuellesMedId = null;
-        // Checkboxen zur Sicherheit beim Schließen leeren
-        document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+    function schliessen() { document.getElementById('detail-view').style.display = 'none'; }
+    
+    function filterTabelle() {
+        const q = document.getElementById('search-bar').value.toLowerCase();
+        gefilterteMedikamente = medikamente.filter(m => {
+            return [m.handelsname, m.wirkstoff, m.indikation].some(v => (v || "").toLowerCase().includes(q));
+        });
+        applySort(gefilterteMedikamente);
+        renderTabelle(gefilterteMedikamente);
     }
+
+    function applySort(liste) {
+        liste.sort((a, b) => {
+            let vA = (a[sortSpalte] || "").toLowerCase();
+            let vB = (b[sortSpalte] || "").toLowerCase();
+            return sortAufsteigend ? vA.localeCompare(vB) : vB.localeCompare(vA);
+        });
+    }
+
+    function sortiereTabelle(s) {
+        if(sortSpalte === s) sortAufsteigend = !sortAufsteigend; else { sortSpalte = s; sortAufsteigend = true; }
+        document.querySelectorAll('th span').forEach(el => el.innerText = "");
+        const indicator = document.getElementById('sort-' + s);
+        if(indicator) indicator.innerText = sortAufsteigend ? " ▲" : " ▼";
+        filterTabelle();
+    }
+
+    async function loeschen() {
+        if(isAdmin && confirm("Löschen?")) {
+            await supabaseClient.from('medikamente').delete().eq('id', aktuellesMedId);
+            await ladeDaten(); schliessen();
+        }
+    }
+
     function initAutoGrow() {
         document.querySelectorAll('.auto-grow').forEach(t => {
             t.addEventListener('input', function() { this.style.height = 'auto'; this.style.height = (this.scrollHeight) + 'px'; });
@@ -363,10 +300,9 @@
     function updateAllTextareaHeights() {
         setTimeout(() => { document.querySelectorAll('.auto-grow').forEach(t => { t.style.height = 'auto'; t.style.height = (t.scrollHeight) + 'px'; }); }, 50);
     }
+
     ladeDaten();
     initAutoGrow();
 </script>
 </body>
 </html>
-
-

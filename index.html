@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Arzneimittel Notfallmedizin - Cloud DB</title>
+    <title>Arzneimittel Notfallmedizin -Cloud DB</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --primary: #d32f2f; --secondary: #455a64; --bg: #f4f7f6; --accent: #1976d2; }
@@ -11,8 +11,12 @@
         .container { max-width: 1200px; margin: auto; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         .header-box { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
         h1 { color: var(--primary); font-size: 1.5rem; margin: 0; }
-        .toolbar { display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap; }
-        #search-bar { flex-grow: 1; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; background-color: #ffffff; }
+        
+        /* Toolbar Styling */
+        .toolbar { display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap; align-items: center; }
+        #search-bar { flex-grow: 2; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; }
+        #list-filter { flex-grow: 1; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; background-color: #fff; cursor: pointer; min-width: 150px; }
+        
         .btn { padding: 10px 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; color: white; transition: 0.2s; display: flex; align-items: center; gap: 5px; font-size: 14px; text-decoration: none; }
         .btn-add { background-color: var(--primary); }
         .btn-save { background-color: #2e7d32; }
@@ -20,18 +24,22 @@
         .btn-delete { background-color: #c62828; }
         .btn-login { background-color: var(--secondary); }
         .btn-link { background-color: var(--accent); margin-top: 8px; justify-content: center; width: 100%; box-sizing: border-box; }
+        
         .admin-only { display: none; }
         .status-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; background: #ccc; margin-right: 5px; }
         .online { background: #4caf50; }
+        
         .med-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
         .med-table th { background: #eee; padding: 12px 10px; text-align: left; border-bottom: 2px solid #ddd; cursor: pointer; user-select: none; }
         .med-table td { padding: 10px; border-bottom: 1px solid #eee; vertical-align: middle; }
         .med-table tr:hover { background-color: #fff4f4; cursor: pointer; }
+        
         .badge { padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; text-transform: uppercase; color: white !important; margin-right: 4px; display: inline-block; white-space: nowrap; margin-bottom: 2px; }
         .badge-al1 { background-color: #1976d2 !important; }
         .badge-al2 { background-color: #7b1fa2 !important; }
         .badge-nef { background-color: #e65100 !important; }
         .badge-route { background-color: #607d8b !important; }
+
         #detail-view { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); overflow-y: auto; z-index: 100; }
         .modal-content { background: white; max-width: 850px; margin: 10px auto; padding: 20px; border-radius: 12px; }
         .grid-form { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
@@ -55,10 +63,18 @@
             <button id="logout-btn" class="btn btn-cancel admin-only" onclick="logout()">Abmelden</button>
         </div>
     </div>
+
     <div class="toolbar">
+        <select id="list-filter" onchange="filterTabelle()">
+            <option value="">Alle Listen</option>
+            <option value="Arzneimittelliste 1">Arzneimittelliste 1</option>
+            <option value="Arzneimittelliste 2">Arzneimittelliste 2</option>
+            <option value="Arzneimittelliste NEF">Arzneimittelliste NEF</option>
+        </select>
         <input type="text" id="search-bar" placeholder="Suchen..." onkeyup="filterTabelle()">
         <button class="btn btn-add admin-only" onclick="neuesMedikament()">✚ Neu</button>
     </div>
+
     <table class="med-table">
         <thead>
             <tr>
@@ -133,24 +149,16 @@
     let isAdmin = false;
     let sortSpalte = 'handelsname';
     let sortAufsteigend = true;
-    const MASTER_PW = "RKNÖ"; // Dein Passwort
+    const MASTER_PW = "RKNÖ"; 
 
-    // Check Login beim Laden
     function checkAuth() {
-        const storedPw = sessionStorage.getItem('adminPw');
-        if(storedPw === MASTER_PW) {
-            applyLogin();
-        }
+        if(sessionStorage.getItem('adminPw') === MASTER_PW) applyLogin();
     }
 
     function login() {
         const pw = prompt("Admin-Passwort:");
-        if(pw === MASTER_PW) {
-            sessionStorage.setItem('adminPw', pw);
-            applyLogin();
-        } else if (pw !== null) {
-            alert("Falsches Passwort.");
-        }
+        if(pw === MASTER_PW) { sessionStorage.setItem('adminPw', pw); applyLogin(); }
+        else if (pw !== null) alert("Falsch.");
     }
 
     function applyLogin() {
@@ -159,10 +167,7 @@
         document.getElementById('login-btn').style.display = 'none';
     }
 
-    function logout() {
-        sessionStorage.removeItem('adminPw');
-        window.location.reload();
-    }
+    function logout() { sessionStorage.removeItem('adminPw'); window.location.reload(); }
 
     async function ladeDaten() {
         document.getElementById('sync-status').classList.remove('online');
@@ -174,16 +179,28 @@
         }
     }
 
+    function filterTabelle() {
+        const query = document.getElementById('search-bar').value.toLowerCase();
+        const selectedList = document.getElementById('list-filter').value;
+
+        gefilterteMedikamente = medikamente.filter(m => {
+            const matchesSearch = [m.handelsname, m.wirkstoff, m.indikation].some(v => (v || "").toLowerCase().includes(query));
+            const matchesList = selectedList === "" || (m.listen || "").includes(selectedList);
+            return matchesSearch && matchesList;
+        });
+        
+        applySort(gefilterteMedikamente);
+        renderTabelle(gefilterteMedikamente);
+    }
+
     function renderTabelle(daten) {
         const tbody = document.getElementById('med-tbody');
         tbody.innerHTML = "";
         daten.forEach(med => {
             const row = tbody.insertRow();
             row.onclick = () => zeigeDetails(med.id);
-            const rString = med.routen || "";
-            const routes = rString.split(', ').filter(r => r).map(r => `<span class="badge badge-route">${r}</span>`).join("");
-            const lString = med.listen || "";
-            const listen = lString.split(', ').filter(l => l).map(l => {
+            const routes = (med.routen || "").split(', ').filter(r => r).map(r => `<span class="badge badge-route">${r}</span>`).join("");
+            const listen = (med.listen || "").split(', ').filter(l => l).map(l => {
                 let short = l.includes('1') ? 'AL1' : (l.includes('2') ? 'AL2' : 'NEF');
                 let cls = l.includes('1') ? 'al1' : (l.includes('2') ? 'al2' : 'nef');
                 return `<span class="badge badge-${cls}">${short}</span>`;
@@ -197,10 +214,6 @@
         const btn = document.getElementById('save-btn');
         const isNeu = !aktuellesMedId;
         btn.disabled = true;
-        btn.innerText = "⏳ Speichert...";
-
-        const listenVal = Array.from(document.querySelectorAll('input[name="liste-zugehoerigkeit"]:checked')).map(cb => cb.value).join(', ');
-        const routenVal = Array.from(document.querySelectorAll('input[name="route"]:checked')).map(cb => cb.value).join(', ');
 
         const obj = {
             handelsname: document.getElementById('edit-handelsname').value,
@@ -216,34 +229,14 @@
             link: document.getElementById('edit-link').value,
             nebenwirkungen: document.getElementById('edit-nebenwirkungen').value,
             wirkweise: document.getElementById('edit-wirkweise').value,
-            listen: listenVal,
-            routen: routenVal
+            listen: Array.from(document.querySelectorAll('input[name="liste-zugehoerigkeit"]:checked')).map(cb => cb.value).join(', '),
+            routen: Array.from(document.querySelectorAll('input[name="route"]:checked')).map(cb => cb.value).join(', ')
         };
 
-        let error;
-        if (aktuellesMedId) {
-            const res = await supabaseClient.from('medikamente').update(obj).eq('id', aktuellesMedId);
-            error = res.error;
-        } else {
-            const res = await supabaseClient.from('medikamente').insert([obj]);
-            error = res.error;
-        }
+        const res = aktuellesMedId ? await supabaseClient.from('medikamente').update(obj).eq('id', aktuellesMedId) : await supabaseClient.from('medikamente').insert([obj]);
 
-        if (error) {
-            alert("Fehler beim Speichern: " + error.message);
-            btn.disabled = false;
-            btn.innerText = "💾 Speichern";
-        } else {
-            if (isNeu) {
-                // Bei neuem Med: Kompletter Reload für Synchronität
-                window.location.reload();
-            } else {
-                await ladeDaten();
-                schliessen();
-                btn.disabled = false;
-                btn.innerText = "💾 Speichern";
-            }
-        }
+        if (res.error) { alert(res.error.message); btn.disabled = false; }
+        else { if(isNeu) window.location.reload(); else { await ladeDaten(); schliessen(); btn.disabled = false; } }
     }
 
     function zeigeDetails(id) {
@@ -251,30 +244,24 @@
         if(!med) return;
         aktuellesMedId = id;
         document.getElementById('view-title').innerText = med.handelsname;
-        
         const fields = ['handelsname', 'wirkstoff', 'gruppe', 'ampulle', 'eintritt', 'dauer', 'indikation', 'kontra', 'dosierung', 'tipp', 'nebenwirkungen', 'wirkweise', 'link'];
         fields.forEach(f => {
             const el = document.getElementById('edit-' + f);
             el.value = med[f] || "";
             el.readOnly = !isAdmin;
         });
-
         const rList = (med.routen || "").split(', ');
         document.querySelectorAll('input[name="route"]').forEach(cb => { cb.checked = rList.includes(cb.value); cb.disabled = !isAdmin; });
-        
         const lList = (med.listen || "").split(', ');
         document.querySelectorAll('input[name="liste-zugehoerigkeit"]').forEach(cb => { cb.checked = lList.includes(cb.value); cb.disabled = !isAdmin; });
-
         const linkBtn = document.getElementById('btn-open-link');
         if(med.link && med.link.includes('http')) { linkBtn.href = med.link; linkBtn.style.display = 'flex'; } else { linkBtn.style.display = 'none'; }
-        
         document.getElementById('detail-view').style.display = 'block';
         updateAllTextareaHeights();
     }
 
     function neuesMedikament() {
         aktuellesMedId = null;
-        document.getElementById('view-title').innerText = "Neues Medikament";
         document.querySelectorAll('.modal-content input, .modal-content textarea').forEach(el => { el.value = ""; el.readOnly = false; });
         document.querySelectorAll('input[type="checkbox"]').forEach(cb => { cb.checked = false; cb.disabled = false; });
         document.getElementById('btn-open-link').style.display = 'none';
@@ -282,48 +269,11 @@
     }
 
     function schliessen() { document.getElementById('detail-view').style.display = 'none'; }
-    
-    function filterTabelle() {
-        const q = document.getElementById('search-bar').value.toLowerCase();
-        gefilterteMedikamente = medikamente.filter(m => {
-            return [m.handelsname, m.wirkstoff, m.indikation].some(v => (v || "").toLowerCase().includes(q));
-        });
-        applySort(gefilterteMedikamente);
-        renderTabelle(gefilterteMedikamente);
-    }
-
-    function applySort(liste) {
-        liste.sort((a, b) => {
-            let vA = (a[sortSpalte] || "").toLowerCase();
-            let vB = (b[sortSpalte] || "").toLowerCase();
-            return sortAufsteigend ? vA.localeCompare(vB) : vB.localeCompare(vA);
-        });
-    }
-
-    function sortiereTabelle(s) {
-        if(sortSpalte === s) sortAufsteigend = !sortAufsteigend; else { sortSpalte = s; sortAufsteigend = true; }
-        document.querySelectorAll('th span').forEach(el => el.innerText = "");
-        const indicator = document.getElementById('sort-' + s);
-        if(indicator) indicator.innerText = sortAufsteigend ? " ▲" : " ▼";
-        filterTabelle();
-    }
-
-    async function loeschen() {
-        if(isAdmin && confirm("Löschen?")) {
-            const { error } = await supabaseClient.from('medikamente').delete().eq('id', aktuellesMedId);
-            if(error) alert(error.message);
-            else { await ladeDaten(); schliessen(); }
-        }
-    }
-
-    function initAutoGrow() {
-        document.querySelectorAll('.auto-grow').forEach(t => {
-            t.addEventListener('input', function() { this.style.height = 'auto'; this.style.height = (this.scrollHeight) + 'px'; });
-        });
-    }
-    function updateAllTextareaHeights() {
-        setTimeout(() => { document.querySelectorAll('.auto-grow').forEach(t => { t.style.height = 'auto'; t.style.height = (t.scrollHeight) + 'px'; }); }, 50);
-    }
+    function applySort(liste) { liste.sort((a, b) => { let vA = (a[sortSpalte] || "").toLowerCase(); let vB = (b[sortSpalte] || "").toLowerCase(); return sortAufsteigend ? vA.localeCompare(vB) : vB.localeCompare(vA); }); }
+    function sortiereTabelle(s) { if(sortSpalte === s) sortAufsteigend = !sortAufsteigend; else { sortSpalte = s; sortAufsteigend = true; } document.querySelectorAll('th span').forEach(el => el.innerText = ""); const indicator = document.getElementById('sort-' + s); if(indicator) indicator.innerText = sortAufsteigend ? " ▲" : " ▼"; filterTabelle(); }
+    async function loeschen() { if(isAdmin && confirm("Löschen?")) { await supabaseClient.from('medikamente').delete().eq('id', aktuellesMedId); await ladeDaten(); schliessen(); } }
+    function initAutoGrow() { document.querySelectorAll('.auto-grow').forEach(t => { t.addEventListener('input', function() { this.style.height = 'auto'; this.style.height = (this.scrollHeight) + 'px'; }); }); }
+    function updateAllTextareaHeights() { setTimeout(() => { document.querySelectorAll('.auto-grow').forEach(t => { t.style.height = 'auto'; t.style.height = (t.scrollHeight) + 'px'; }); }, 50); }
 
     checkAuth();
     ladeDaten();
@@ -331,4 +281,3 @@
 </script>
 </body>
 </html>
-

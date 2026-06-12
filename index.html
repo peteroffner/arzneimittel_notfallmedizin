@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Arzneimittel Notfallmedizin -Cloud DB</title>
+    <title>Arzneimittel Notfallmedizin - Cloud DB</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --primary: #d32f2f; --secondary: #455a64; --bg: #f4f7f6; --accent: #1976d2; }
@@ -12,14 +12,13 @@
         .title-area { display: flex; align-items: center; gap: 10px; }
         .header-box { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
         h1 { color: var(--primary); font-size: 1.5rem; margin: 0; }
-        .info-icon { cursor: pointer; background: var(--secondary); color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 16px; transition: 0.3s; }
+        .info-icon { cursor: pointer; background: var(--secondary); color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 16px; transition: 0.3s; flex-shrink: 0; }
         .info-icon:hover { background: var(--primary); transform: scale(1.1); }
-        
-        /* Toolbar Styling */
+
         .toolbar { display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap; align-items: center; }
         #search-bar { flex-grow: 2; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; }
         #list-filter { flex-grow: 1; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; background-color: #fff; cursor: pointer; min-width: 150px; }
-        
+
         .btn { padding: 10px 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; color: white; transition: 0.2s; display: flex; align-items: center; gap: 5px; font-size: 14px; text-decoration: none; }
         .btn-add { background-color: var(--primary); }
         .btn-save { background-color: #2e7d32; }
@@ -27,36 +26,51 @@
         .btn-delete { background-color: #c62828; }
         .btn-login { background-color: var(--secondary); }
         .btn-link { background-color: var(--accent); margin-top: 8px; justify-content: center; width: 100%; box-sizing: border-box; }
-        
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
         .admin-only { display: none; }
         .status-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; background: #ccc; margin-right: 5px; }
         .online { background: #4caf50; }
-        
+
         .med-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
         .med-table th { background: #eee; padding: 12px 10px; text-align: left; border-bottom: 2px solid #ddd; cursor: pointer; user-select: none; }
         .med-table td { padding: 10px; border-bottom: 1px solid #eee; vertical-align: middle; }
         .med-table tr:hover { background-color: #fff4f4; cursor: pointer; }
-        
+        .med-table .empty-row td { text-align: center; color: #999; padding: 30px; cursor: default; }
+        .med-table .empty-row:hover { background: none; }
+
         .badge { padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; text-transform: uppercase; color: white !important; margin-right: 4px; display: inline-block; white-space: nowrap; margin-bottom: 2px; }
         .badge-al1 { background-color: #1976d2 !important; }
         .badge-al2 { background-color: #7b1fa2 !important; }
         .badge-nef { background-color: #e65100 !important; }
         .badge-route { background-color: #607d8b !important; }
 
+        /* Overlay & Modal */
         #detail-view { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); overflow-y: auto; z-index: 100; }
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); overflow-y: auto; z-index: 1000; }
         .modal-content { background: white; max-width: 850px; margin: 10px auto; padding: 20px; border-radius: 12px; }
+
         .info-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         .info-table th, .info-table td { border: 1px solid #ddd; padding: 10px; text-align: left; }
         .info-table th { background: #f8f8f8; }
+
         .grid-form { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
         .full-width { grid-column: span 3; }
         .field label { display: block; font-weight: bold; margin-bottom: 3px; color: #555; font-size: 12px; }
         .field input, .field textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 14px; font-family: inherit; }
+        .field input:read-only, .field textarea:read-only { background: #f9f9f9; color: #555; }
         .field textarea { resize: none; overflow: hidden; min-height: 40px; }
         .highlight-field { background-color: #fffde7; border: 1px solid #fbc02d !important; }
         .tip-field { background-color: #e1f5fe; border: 1px solid #03a9f4 !important; }
         .checkbox-group { display: flex; gap: 15px; padding: 10px; background: #f9f9f9; border-radius: 6px; flex-wrap: wrap; border: 1px solid #eee; }
+        .checkbox-group label { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 14px; }
+
+        /* Toast-Benachrichtigung */
+        .toast { position: fixed; bottom: 24px; right: 24px; background: #2e7d32; color: white; padding: 12px 20px; border-radius: 8px; font-size: 14px; font-weight: bold; z-index: 9999; opacity: 0; transition: opacity 0.3s; pointer-events: none; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        .toast.show { opacity: 1; }
+
+        .record-count { font-size: 12px; color: #999; padding: 8px 10px; text-align: right; }
+
         @media (max-width: 768px) { .grid-form { grid-template-columns: 1fr; } .full-width { grid-column: span 1; } .hide-mobile { display: none; } }
     </style>
 </head>
@@ -66,7 +80,7 @@
     <div class="header-box">
         <div class="title-area">
             <h1><span id="sync-status" class="status-dot"></span> Arzneimittel Notfallmedizin RKNÖ</h1>
-            <div class="info-icon" onclick="toggleInfo()">?</div>
+            <div class="info-icon" onclick="toggleInfo()" title="Legende öffnen">?</div>
         </div>
         <div id="auth-controls">
             <button id="login-btn" class="btn btn-login" onclick="login()">🔑 Admin</button>
@@ -81,7 +95,7 @@
             <option value="Arzneimittelliste 2">Arzneimittelliste 2</option>
             <option value="Arzneimittelliste NEF">Arzneimittelliste NEF</option>
         </select>
-        <input type="text" id="search-bar" placeholder="Suchen..." onkeyup="filterTabelle()">
+        <input type="text" id="search-bar" placeholder="Suchen nach Name, Wirkstoff, Indikation..." oninput="filterTabelle()">
         <button class="btn btn-add admin-only" onclick="neuesMedikament()">✚ Neu</button>
     </div>
 
@@ -89,19 +103,21 @@
         <thead>
             <tr>
                 <th onclick="sortiereTabelle('handelsname')">Handelsname <span id="sort-handelsname">▲</span></th>
-                <th onclick="sortiereTabelle('wirkstoff')" class="hide-mobile">Wirkstoff</th>
-                <th onclick="sortiereTabelle('routen')">Verabreichung</th>
-                <th onclick="sortiereTabelle('listen')">Listen</th>
+                <th onclick="sortiereTabelle('wirkstoff')" class="hide-mobile">Wirkstoff <span id="sort-wirkstoff"></span></th>
+                <th onclick="sortiereTabelle('routen')">Verabreichung <span id="sort-routen"></span></th>
+                <th onclick="sortiereTabelle('listen')">Listen <span id="sort-listen"></span></th>
             </tr>
         </thead>
         <tbody id="med-tbody"></tbody>
     </table>
+    <div class="record-count" id="record-count"></div>
 </div>
 
+<!-- Info-Modal (Legende) -->
 <div id="info-modal" class="modal">
     <div class="modal-content">
         <h2 style="color: var(--primary);">Erklärungen & Legende</h2>
-        
+
         <h3>Qualifikationsstufen (Listen)</h3>
         <table class="info-table">
             <thead>
@@ -114,7 +130,7 @@
             </tbody>
         </table>
 
-        <h3>Verabreichungswege (Abkürzungen)</h3>
+        <h3 style="margin-top: 20px;">Verabreichungswege (Abkürzungen)</h3>
         <table class="info-table">
             <thead>
                 <tr><th>Kürzel</th><th>Bedeutung</th></tr>
@@ -125,6 +141,7 @@
                 <tr><td><b>i.o.</b></td><td>intraossär (in den Knochen)</td></tr>
                 <tr><td><b>i.n.</b></td><td>intranasal (über die Nasenschleimhaut)</td></tr>
                 <tr><td><b>p.o.</b></td><td>per os (über den Mund)</td></tr>
+                <tr><td><b>inh.</b></td><td>inhalativ</td></tr>
             </tbody>
         </table>
 
@@ -134,27 +151,32 @@
     </div>
 </div>
 
+<!-- Detail- / Bearbeitungs-Modal -->
 <div id="detail-view">
     <div class="modal-content">
         <h2 id="view-title" style="color: var(--primary); margin-bottom:15px;">Details</h2>
         <div class="grid-form">
+
             <div class="field"><label>Handelsname</label><input type="text" id="edit-handelsname"></div>
             <div class="field"><label>Wirkstoff</label><input type="text" id="edit-wirkstoff"></div>
             <div class="field"><label>Wirkstoffgruppe</label><input type="text" id="edit-gruppe"></div>
+
             <div class="field full-width">
                 <label>Listen-Zugehörigkeit</label>
-                <div class="checkbox-group">
+                <div class="checkbox-group" id="cb-listen">
                     <label><input type="checkbox" name="liste-zugehoerigkeit" value="Arzneimittelliste 1"> Arzneimittelliste 1</label>
                     <label><input type="checkbox" name="liste-zugehoerigkeit" value="Arzneimittelliste 2"> Arzneimittelliste 2</label>
                     <label><input type="checkbox" name="liste-zugehoerigkeit" value="Arzneimittelliste NEF"> Arzneimittelliste NEF</label>
                 </div>
             </div>
+
             <div class="field"><label>Ampulle / Konzentration</label><input type="text" id="edit-ampulle"></div>
             <div class="field"><label>Wirkeintritt</label><input type="text" id="edit-eintritt"></div>
             <div class="field"><label>Wirkdauer</label><input type="text" id="edit-dauer"></div>
+
             <div class="field full-width">
                 <label>Verabreichungsweg (Applikation)</label>
-                <div class="checkbox-group">
+                <div class="checkbox-group" id="cb-routen">
                     <label><input type="checkbox" name="route" value="i.v."> i.v.</label>
                     <label><input type="checkbox" name="route" value="i.m."> i.m.</label>
                     <label><input type="checkbox" name="route" value="i.n."> i.n.</label>
@@ -163,10 +185,12 @@
                     <label><input type="checkbox" name="route" value="inh."> inh.</label>
                 </div>
             </div>
+
             <div class="field full-width"><label>Indikation</label><textarea id="edit-indikation" class="auto-grow"></textarea></div>
             <div class="field full-width"><label style="color:red">Kontraindikationen</label><textarea id="edit-kontra" class="auto-grow"></textarea></div>
             <div class="field full-width"><label>Dosierung</label><textarea id="edit-dosierung" class="highlight-field auto-grow"></textarea></div>
             <div class="field full-width"><label>Praxistipp / Bemerkung</label><textarea id="edit-tipp" class="tip-field auto-grow"></textarea></div>
+
             <div class="field full-width">
                 <label>Externer Verweis (URL)</label>
                 <div style="display: flex; flex-direction: column;">
@@ -174,9 +198,11 @@
                     <a id="btn-open-link" href="#" target="_blank" class="btn btn-link" style="display:none;">🔗 Link öffnen</a>
                 </div>
             </div>
+
             <div class="field full-width"><label>Nebenwirkungen</label><textarea id="edit-nebenwirkungen" class="auto-grow"></textarea></div>
             <div class="field full-width"><label>Wirkweise</label><textarea id="edit-wirkweise" class="auto-grow"></textarea></div>
         </div>
+
         <div class="toolbar" style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px;">
             <button id="save-btn" class="btn btn-save admin-only" onclick="speichern()">💾 Speichern</button>
             <button id="delete-btn" class="btn btn-delete admin-only" onclick="loeschen()">🗑️ Löschen</button>
@@ -184,6 +210,9 @@
         </div>
     </div>
 </div>
+
+<!-- Toast-Benachrichtigung -->
+<div class="toast" id="toast"></div>
 
 <script>
     const SUPABASE_URL = "https://ihzoojwcaqgeoavlazvr.supabase.co";
@@ -196,21 +225,63 @@
     let isAdmin = false;
     let sortSpalte = 'handelsname';
     let sortAufsteigend = true;
-    const MASTER_PW = "RKNÖ"; 
+    const MASTER_PW = "RKNÖ";
 
-    function toggleInfo() {
-        const modal = document.getElementById('info-modal');
-        modal.style.display = modal.style.display === 'block' ? 'none' : 'block';
+    // -------------------------
+    // Hilfsfunktionen
+    // -------------------------
+
+    function zeigeToast(msg, farbe = '#2e7d32') {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.style.background = farbe;
+        t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), 2800);
     }
 
+    /** Liest alle Formularwerte aus dem Detail-Modal (scoped auf #detail-view) */
+    function formularWerte() {
+        const scope = document.getElementById('detail-view');
+        return {
+            handelsname:   scope.querySelector('#edit-handelsname').value.trim(),
+            wirkstoff:     scope.querySelector('#edit-wirkstoff').value.trim(),
+            gruppe:        scope.querySelector('#edit-gruppe').value.trim(),
+            ampulle:       scope.querySelector('#edit-ampulle').value.trim(),
+            eintritt:      scope.querySelector('#edit-eintritt').value.trim(),
+            dauer:         scope.querySelector('#edit-dauer').value.trim(),
+            indikation:    scope.querySelector('#edit-indikation').value.trim(),
+            kontra:        scope.querySelector('#edit-kontra').value.trim(),
+            dosierung:     scope.querySelector('#edit-dosierung').value.trim(),
+            tipp:          scope.querySelector('#edit-tipp').value.trim(),
+            link:          scope.querySelector('#edit-link').value.trim(),
+            nebenwirkungen:scope.querySelector('#edit-nebenwirkungen').value.trim(),
+            wirkweise:     scope.querySelector('#edit-wirkweise').value.trim(),
+            listen: Array.from(scope.querySelectorAll('input[name="liste-zugehoerigkeit"]:checked'))
+                        .map(cb => cb.value).join(', '),
+            routen: Array.from(scope.querySelectorAll('input[name="route"]:checked'))
+                        .map(cb => cb.value).join(', ')
+        };
+    }
+
+    /** Setzt alle Formularfelder im Detail-Modal auf readonly/disabled (Lesemodus) */
+    function setzeFormularModus(nurLesen) {
+        const scope = document.getElementById('detail-view');
+        scope.querySelectorAll('input[type="text"], textarea').forEach(el => el.readOnly = nurLesen);
+        scope.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.disabled = nurLesen);
+    }
+
+    // -------------------------
+    // Auth
+    // -------------------------
+
     function checkAuth() {
-        if(sessionStorage.getItem('adminPw') === MASTER_PW) applyLogin();
+        if (sessionStorage.getItem('adminPw') === MASTER_PW) applyLogin();
     }
 
     function login() {
         const pw = prompt("Admin-Passwort:");
-        if(pw === MASTER_PW) { sessionStorage.setItem('adminPw', pw); applyLogin(); }
-        else if (pw !== null) alert("Falsch.");
+        if (pw === MASTER_PW) { sessionStorage.setItem('adminPw', pw); applyLogin(); }
+        else if (pw !== null) alert("Falsches Passwort.");
     }
 
     function applyLogin() {
@@ -219,122 +290,293 @@
         document.getElementById('login-btn').style.display = 'none';
     }
 
-    function logout() { sessionStorage.removeItem('adminPw'); window.location.reload(); }
+    function logout() {
+        sessionStorage.removeItem('adminPw');
+        window.location.reload();
+    }
+
+    // -------------------------
+    // Daten laden
+    // -------------------------
 
     async function ladeDaten() {
         document.getElementById('sync-status').classList.remove('online');
         const { data, error } = await supabaseClient.from('medikamente').select('*');
-        if (!error) {
+        if (!error && data) {
             medikamente = data;
             document.getElementById('sync-status').classList.add('online');
-            filterTabelle(); 
+            filterTabelle();
+        } else if (error) {
+            console.error('Fehler beim Laden:', error.message);
         }
     }
+
+    // -------------------------
+    // Tabelle
+    // -------------------------
 
     function filterTabelle() {
         const query = document.getElementById('search-bar').value.toLowerCase();
         const selectedList = document.getElementById('list-filter').value;
 
         gefilterteMedikamente = medikamente.filter(m => {
-            const matchesSearch = [m.handelsname, m.wirkstoff, m.indikation].some(v => (v || "").toLowerCase().includes(query));
-            const matchesList = selectedList === "" || (m.listen || "").includes(selectedList);
+            const matchesSearch = [m.handelsname, m.wirkstoff, m.indikation]
+                .some(v => (v || '').toLowerCase().includes(query));
+            const matchesList = !selectedList || (m.listen || '').includes(selectedList);
             return matchesSearch && matchesList;
         });
-        
+
         applySort(gefilterteMedikamente);
         renderTabelle(gefilterteMedikamente);
     }
 
     function renderTabelle(daten) {
         const tbody = document.getElementById('med-tbody');
-        tbody.innerHTML = "";
+        tbody.innerHTML = '';
+
+        if (!daten.length) {
+            tbody.innerHTML = '<tr class="empty-row"><td colspan="4">Keine Medikamente gefunden.</td></tr>';
+            document.getElementById('record-count').textContent = '';
+            return;
+        }
+
         daten.forEach(med => {
             const row = tbody.insertRow();
             row.onclick = () => zeigeDetails(med.id);
-            const routes = (med.routen || "").split(', ').filter(r => r).map(r => `<span class="badge badge-route">${r}</span>`).join("");
-            const listen = (med.listen || "").split(', ').filter(l => l).map(l => {
-                let short = l.includes('1') ? 'AL1' : (l.includes('2') ? 'AL2' : 'NEF');
-                let cls = l.includes('1') ? 'al1' : (l.includes('2') ? 'al2' : 'nef');
-                return `<span class="badge badge-${cls}">${short}</span>`;
-            }).join("");
-            row.innerHTML = `<td><strong>${med.handelsname}</strong></td><td class="hide-mobile">${med.wirkstoff || ''}</td><td>${routes}</td><td>${listen}</td>`;
+            const routes = (med.routen || '').split(', ').filter(r => r)
+                .map(r => `<span class="badge badge-route">${r}</span>`).join('');
+            const listen = (med.listen || '').split(', ').filter(l => l).map(l => {
+                if (l.includes('NEF')) return `<span class="badge badge-nef">NEF</span>`;
+                if (l.includes('2'))   return `<span class="badge badge-al2">AL 2</span>`;
+                return `<span class="badge badge-al1">AL 1</span>`;
+            }).join('');
+            row.innerHTML = `
+                <td><strong>${med.handelsname || ''}</strong></td>
+                <td class="hide-mobile">${med.wirkstoff || ''}</td>
+                <td>${routes}</td>
+                <td>${listen}</td>`;
+        });
+
+        document.getElementById('record-count').textContent =
+            `${daten.length} von ${medikamente.length} Medikamenten`;
+    }
+
+    function applySort(liste) {
+        liste.sort((a, b) => {
+            const vA = (a[sortSpalte] || '').toLowerCase();
+            const vB = (b[sortSpalte] || '').toLowerCase();
+            return sortAufsteigend ? vA.localeCompare(vB) : vB.localeCompare(vA);
         });
     }
 
-    async function speichern() {
-    if(!isAdmin) return;
-    const btn = document.getElementById('save-btn');
-    const isNeu = !aktuellesMedId;
-    btn.disabled = true;
-
-    const obj = {
-        handelsname: document.getElementById('edit-handelsname').value,
-        wirkstoff: document.getElementById('edit-wirkstoff').value,
-        gruppe: document.getElementById('edit-gruppe').value,
-        ampulle: document.getElementById('edit-ampulle').value,
-        eintritt: document.getElementById('edit-eintritt').value,
-        dauer: document.getElementById('edit-dauer').value,
-        indikation: document.getElementById('edit-indikation').value,
-        kontra: document.getElementById('edit-kontra').value,
-        dosierung: document.getElementById('edit-dosierung').value,
-        tipp: document.getElementById('edit-tipp').value,
-        link: document.getElementById('edit-link').value,
-        nebenwirkungen: document.getElementById('edit-nebenwirkungen').value,
-        wirkweise: document.getElementById('edit-wirkweise').value,
-        listen: Array.from(document.querySelectorAll('.modal-content input[name="liste-zugehoerigkeit"]:checked')).map(cb => cb.value).join(', '),
-        routen: Array.from(document.querySelectorAll('.modal-content input[name="route"]:checked')).map(cb => cb.value).join(', ')
-    };
-
-    const res = aktuellesMedId
-        ? await supabaseClient.from('medikamente').update(obj).eq('id', aktuellesMedId)
-        : await supabaseClient.from('medikamente').insert([obj]).select();
-
-    if (res.error) {
-        alert(res.error.message);
-        btn.disabled = false;
-    } else {
-        await ladeDaten();
-        schliessen();
-        btn.disabled = false;
+    function sortiereTabelle(spalte) {
+        if (sortSpalte === spalte) {
+            sortAufsteigend = !sortAufsteigend;
+        } else {
+            sortSpalte = spalte;
+            sortAufsteigend = true;
         }
+        document.querySelectorAll('.med-table th span').forEach(el => el.textContent = '');
+        const indicator = document.getElementById('sort-' + spalte);
+        if (indicator) indicator.textContent = sortAufsteigend ? ' ▲' : ' ▼';
+        filterTabelle();
     }
+
+    // -------------------------
+    // Detail-Modal öffnen
+    // -------------------------
 
     function zeigeDetails(id) {
         const med = medikamente.find(m => m.id === id);
-        if(!med) return;
+        if (!med) return;
         aktuellesMedId = id;
-        document.getElementById('view-title').innerText = med.handelsname;
-        const fields = ['handelsname', 'wirkstoff', 'gruppe', 'ampulle', 'eintritt', 'dauer', 'indikation', 'kontra', 'dosierung', 'tipp', 'nebenwirkungen', 'wirkweise', 'link'];
-        fields.forEach(f => {
-            const el = document.getElementById('edit-' + f);
-            el.value = med[f] || "";
-            el.readOnly = !isAdmin;
+
+        document.getElementById('view-title').textContent = med.handelsname || 'Details';
+
+        const felder = ['handelsname','wirkstoff','gruppe','ampulle','eintritt','dauer',
+                        'indikation','kontra','dosierung','tipp','nebenwirkungen','wirkweise','link'];
+        const scope = document.getElementById('detail-view');
+        felder.forEach(f => {
+            const el = scope.querySelector('#edit-' + f);
+            if (el) el.value = med[f] || '';
         });
-        const rList = (med.routen || "").split(', ');
-        document.querySelectorAll('input[name="route"]').forEach(cb => { cb.checked = rList.includes(cb.value); cb.disabled = !isAdmin; });
-        const lList = (med.listen || "").split(', ');
-        document.querySelectorAll('input[name="liste-zugehoerigkeit"]').forEach(cb => { cb.checked = lList.includes(cb.value); cb.disabled = !isAdmin; });
+
+        // Checkboxen: explizit scoped auf #detail-view
+        const rList = (med.routen || '').split(', ');
+        scope.querySelectorAll('input[name="route"]').forEach(cb => {
+            cb.checked = rList.includes(cb.value);
+        });
+
+        const lList = (med.listen || '').split(', ');
+        scope.querySelectorAll('input[name="liste-zugehoerigkeit"]').forEach(cb => {
+            cb.checked = lList.includes(cb.value);
+        });
+
+        // Link-Button
         const linkBtn = document.getElementById('btn-open-link');
-        if(med.link && med.link.includes('http')) { linkBtn.href = med.link; linkBtn.style.display = 'flex'; } else { linkBtn.style.display = 'none'; }
+        if (med.link && med.link.startsWith('http')) {
+            linkBtn.href = med.link;
+            linkBtn.style.display = 'flex';
+        } else {
+            linkBtn.style.display = 'none';
+        }
+
+        setzeFormularModus(!isAdmin);
         document.getElementById('detail-view').style.display = 'block';
         updateAllTextareaHeights();
     }
 
+    // -------------------------
+    // Neues Medikament
+    // -------------------------
+
     function neuesMedikament() {
-    aktuellesMedId = null;
-    document.querySelectorAll('.modal-content input, .modal-content textarea').forEach(el => { el.value = ""; el.readOnly = false; });
-    document.querySelectorAll('.modal-content input[type="checkbox"]').forEach(cb => { cb.checked = false; cb.disabled = false; });
-    document.getElementById('view-title').innerText = "Neues Medikament";
-    document.getElementById('btn-open-link').style.display = 'none';
-    document.getElementById('detail-view').style.display = 'block';
+        if (!isAdmin) return;
+        aktuellesMedId = null;
+
+        document.getElementById('view-title').textContent = 'Neues Medikament';
+
+        // Alle Text-/Textarea-Felder leeren – scoped auf #detail-view
+        const scope = document.getElementById('detail-view');
+        scope.querySelectorAll('input[type="text"], textarea').forEach(el => {
+            el.value = '';
+            el.readOnly = false;
+        });
+
+        // Checkboxen zurücksetzen – scoped auf #detail-view
+        scope.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            cb.checked = false;
+            cb.disabled = false;
+        });
+
+        document.getElementById('btn-open-link').style.display = 'none';
+        document.getElementById('detail-view').style.display = 'block';
     }
 
-    function schliessen() { document.getElementById('detail-view').style.display = 'none'; }
-    function applySort(liste) { liste.sort((a, b) => { let vA = (a[sortSpalte] || "").toLowerCase(); let vB = (b[sortSpalte] || "").toLowerCase(); return sortAufsteigend ? vA.localeCompare(vB) : vB.localeCompare(vA); }); }
-    function sortiereTabelle(s) { if(sortSpalte === s) sortAufsteigend = !sortAufsteigend; else { sortSpalte = s; sortAufsteigend = true; } document.querySelectorAll('th span').forEach(el => el.innerText = ""); const indicator = document.getElementById('sort-' + s); if(indicator) indicator.innerText = sortAufsteigend ? " ▲" : " ▼"; filterTabelle(); }
-    async function loeschen() { if(isAdmin && confirm("Löschen?")) { await supabaseClient.from('medikamente').delete().eq('id', aktuellesMedId); await ladeDaten(); schliessen(); } }
-    function initAutoGrow() { document.querySelectorAll('.auto-grow').forEach(t => { t.addEventListener('input', function() { this.style.height = 'auto'; this.style.height = (this.scrollHeight) + 'px'; }); }); }
-    function updateAllTextareaHeights() { setTimeout(() => { document.querySelectorAll('.auto-grow').forEach(t => { t.style.height = 'auto'; t.style.height = (t.scrollHeight) + 'px'; }); }, 50); }
+    // -------------------------
+    // Speichern (Insert & Update)
+    // -------------------------
+
+    async function speichern() {
+        if (!isAdmin) return;
+
+        const obj = formularWerte();
+
+        if (!obj.handelsname) {
+            zeigeToast('Handelsname ist ein Pflichtfeld.', '#c62828');
+            return;
+        }
+
+        const btn = document.getElementById('save-btn');
+        btn.disabled = true;
+        btn.textContent = '⏳ Speichert...';
+
+        let res;
+        if (aktuellesMedId) {
+            // UPDATE
+            res = await supabaseClient
+                .from('medikamente')
+                .update(obj)
+                .eq('id', aktuellesMedId);
+        } else {
+            // INSERT – .select() damit Supabase den gespeicherten Datensatz zurückgibt
+            res = await supabaseClient
+                .from('medikamente')
+                .insert([obj])
+                .select();
+
+            if (!res.error && res.data && res.data.length > 0) {
+                aktuellesMedId = res.data[0].id;
+            }
+        }
+
+        btn.disabled = false;
+        btn.textContent = '💾 Speichern';
+
+        if (res.error) {
+            alert('Fehler beim Speichern: ' + res.error.message);
+        } else {
+            zeigeToast('✓ Erfolgreich gespeichert');
+            await ladeDaten();
+            schliessen();
+        }
+    }
+
+    // -------------------------
+    // Löschen
+    // -------------------------
+
+    async function loeschen() {
+        if (!isAdmin || !aktuellesMedId) return;
+        const med = medikamente.find(m => m.id === aktuellesMedId);
+        if (!confirm(`"${med?.handelsname || 'Medikament'}" wirklich löschen?`)) return;
+
+        const { error } = await supabaseClient
+            .from('medikamente')
+            .delete()
+            .eq('id', aktuellesMedId);
+
+        if (error) {
+            alert('Fehler beim Löschen: ' + error.message);
+        } else {
+            zeigeToast('Medikament gelöscht.', '#c62828');
+            await ladeDaten();
+            schliessen();
+        }
+    }
+
+    // -------------------------
+    // Modal schließen
+    // -------------------------
+
+    function schliessen() {
+        document.getElementById('detail-view').style.display = 'none';
+        aktuellesMedId = null;
+    }
+
+    // Klick außerhalb des Modals schließt es
+    document.getElementById('detail-view').addEventListener('click', function(e) {
+        if (e.target === this) schliessen();
+    });
+
+    // -------------------------
+    // Info-Modal
+    // -------------------------
+
+    function toggleInfo() {
+        const modal = document.getElementById('info-modal');
+        modal.style.display = modal.style.display === 'block' ? 'none' : 'block';
+    }
+
+    document.getElementById('info-modal').addEventListener('click', function(e) {
+        if (e.target === this) toggleInfo();
+    });
+
+    // -------------------------
+    // Textarea Auto-Grow
+    // -------------------------
+
+    function initAutoGrow() {
+        document.querySelectorAll('.auto-grow').forEach(t => {
+            t.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = this.scrollHeight + 'px';
+            });
+        });
+    }
+
+    function updateAllTextareaHeights() {
+        setTimeout(() => {
+            document.querySelectorAll('.auto-grow').forEach(t => {
+                t.style.height = 'auto';
+                t.style.height = t.scrollHeight + 'px';
+            });
+        }, 50);
+    }
+
+    // -------------------------
+    // Init
+    // -------------------------
 
     checkAuth();
     ladeDaten();
@@ -342,4 +584,3 @@
 </script>
 </body>
 </html>
-

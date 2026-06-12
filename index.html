@@ -262,34 +262,48 @@
     }
 
     async function speichern() {
-        if(!isAdmin) return;
-        const btn = document.getElementById('save-btn');
-        const isNeu = !aktuellesMedId;
-        btn.disabled = true;
+    if(!isAdmin) return;
+    const btn = document.getElementById('save-btn');
+    const isNeu = !aktuellesMedId;
+    btn.disabled = true;
 
-        const obj = {
-            handelsname: document.getElementById('edit-handelsname').value,
-            wirkstoff: document.getElementById('edit-wirkstoff').value,
-            gruppe: document.getElementById('edit-gruppe').value,
-            ampulle: document.getElementById('edit-ampulle').value,
-            eintritt: document.getElementById('edit-eintritt').value,
-            dauer: document.getElementById('edit-dauer').value,
-            indikation: document.getElementById('edit-indikation').value,
-            kontra: document.getElementById('edit-kontra').value,
-            dosierung: document.getElementById('edit-dosierung').value,
-            tipp: document.getElementById('edit-tipp').value,
-            link: document.getElementById('edit-link').value,
-            nebenwirkungen: document.getElementById('edit-nebenwirkungen').value,
-            wirkweise: document.getElementById('edit-wirkweise').value,
-            listen: Array.from(document.querySelectorAll('input[name="liste-zugehoerigkeit"]:checked')).map(cb => cb.value).join(', '),
-            routen: Array.from(document.querySelectorAll('input[name="route"]:checked')).map(cb => cb.value).join(', ')
-        };
+    const obj = {
+        handelsname: document.getElementById('edit-handelsname').value,
+        wirkstoff: document.getElementById('edit-wirkstoff').value,
+        gruppe: document.getElementById('edit-gruppe').value,
+        ampulle: document.getElementById('edit-ampulle').value,
+        eintritt: document.getElementById('edit-eintritt').value,
+        dauer: document.getElementById('edit-dauer').value,
+        indikation: document.getElementById('edit-indikation').value,
+        kontra: document.getElementById('edit-kontra').value,
+        dosierung: document.getElementById('edit-dosierung').value,
+        tipp: document.getElementById('edit-tipp').value,
+        link: document.getElementById('edit-link').value,
+        nebenwirkungen: document.getElementById('edit-nebenwirkungen').value,
+        wirkweise: document.getElementById('edit-wirkweise').value,
+        listen: Array.from(document.querySelectorAll('input[name="liste-zugehoerigkeit"]:checked')).map(cb => cb.value).join(', '),
+        routen: Array.from(document.querySelectorAll('input[name="route"]:checked')).map(cb => cb.value).join(', ')
+    };
 
-        const res = aktuellesMedId ? await supabaseClient.from('medikamente').update(obj).eq('id', aktuellesMedId) : await supabaseClient.from('medikamente').insert([obj]);
-
-        if (res.error) { alert(res.error.message); btn.disabled = false; }
-        else { if(isNeu) window.location.reload(); else { await ladeDaten(); schliessen(); btn.disabled = false; } }
+    let res;
+    if (aktuellesMedId) {
+        res = await supabaseClient.from('medikamente').update(obj).eq('id', aktuellesMedId);
+    } else {
+        res = await supabaseClient.from('medikamente').insert([obj]).select(); // .select() damit die ID zurückkommt
+        if (!res.error && res.data && res.data.length > 0) {
+            aktuellesMedId = res.data[0].id; // ID für den weiteren Ablauf setzen
+        }
     }
+
+    if (res.error) {
+        alert(res.error.message);
+        btn.disabled = false;
+    } else {
+        await ladeDaten();
+        schliessen();
+        btn.disabled = false;
+    }
+}
 
     function zeigeDetails(id) {
         const med = medikamente.find(m => m.id === id);

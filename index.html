@@ -281,19 +281,13 @@
         link: document.getElementById('edit-link').value,
         nebenwirkungen: document.getElementById('edit-nebenwirkungen').value,
         wirkweise: document.getElementById('edit-wirkweise').value,
-        listen: Array.from(document.querySelectorAll('input[name="liste-zugehoerigkeit"]:checked')).map(cb => cb.value).join(', '),
-        routen: Array.from(document.querySelectorAll('input[name="route"]:checked')).map(cb => cb.value).join(', ')
+        listen: Array.from(document.querySelectorAll('.modal-content input[name="liste-zugehoerigkeit"]:checked')).map(cb => cb.value).join(', '),
+        routen: Array.from(document.querySelectorAll('.modal-content input[name="route"]:checked')).map(cb => cb.value).join(', ')
     };
 
-    let res;
-    if (aktuellesMedId) {
-        res = await supabaseClient.from('medikamente').update(obj).eq('id', aktuellesMedId);
-    } else {
-        res = await supabaseClient.from('medikamente').insert([obj]).select(); // .select() damit die ID zurückkommt
-        if (!res.error && res.data && res.data.length > 0) {
-            aktuellesMedId = res.data[0].id; // ID für den weiteren Ablauf setzen
-        }
-    }
+    const res = aktuellesMedId
+        ? await supabaseClient.from('medikamente').update(obj).eq('id', aktuellesMedId)
+        : await supabaseClient.from('medikamente').insert([obj]).select();
 
     if (res.error) {
         alert(res.error.message);
@@ -302,8 +296,8 @@
         await ladeDaten();
         schliessen();
         btn.disabled = false;
+        }
     }
-}
 
     function zeigeDetails(id) {
         const med = medikamente.find(m => m.id === id);
@@ -327,11 +321,12 @@
     }
 
     function neuesMedikament() {
-        aktuellesMedId = null;
-        document.querySelectorAll('.modal-content input, .modal-content textarea').forEach(el => { el.value = ""; el.readOnly = false; });
-        document.querySelectorAll('input[type="checkbox"]').forEach(cb => { cb.checked = false; cb.disabled = false; });
-        document.getElementById('btn-open-link').style.display = 'none';
-        document.getElementById('detail-view').style.display = 'block';
+    aktuellesMedId = null;
+    document.querySelectorAll('.modal-content input, .modal-content textarea').forEach(el => { el.value = ""; el.readOnly = false; });
+    document.querySelectorAll('.modal-content input[type="checkbox"]').forEach(cb => { cb.checked = false; cb.disabled = false; });
+    document.getElementById('view-title').innerText = "Neues Medikament";
+    document.getElementById('btn-open-link').style.display = 'none';
+    document.getElementById('detail-view').style.display = 'block';
     }
 
     function schliessen() { document.getElementById('detail-view').style.display = 'none'; }

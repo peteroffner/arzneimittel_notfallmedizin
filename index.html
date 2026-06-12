@@ -57,21 +57,90 @@
         .grid-form { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
         .full-width { grid-column: span 3; }
         .field label { display: block; font-weight: bold; margin-bottom: 3px; color: #555; font-size: 12px; }
-        .field input, .field textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 14px; font-family: inherit; }
-        .field input:read-only, .field textarea:read-only { background: #f9f9f9; color: #555; }
-        .field textarea { resize: none; overflow: hidden; min-height: 40px; }
-        .highlight-field { background-color: #fffde7; border: 1px solid #fbc02d !important; }
-        .tip-field { background-color: #e1f5fe; border: 1px solid #03a9f4 !important; }
+        .field input[type="text"] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 14px; font-family: inherit; }
+        .field input[type="text"]:read-only { background: #f9f9f9; color: #555; }
+        .highlight-field .rte-body { background-color: #fffde7 !important; }
+        .tip-field .rte-body { background-color: #e1f5fe !important; }
+
         .checkbox-group { display: flex; gap: 15px; padding: 10px; background: #f9f9f9; border-radius: 6px; flex-wrap: wrap; border: 1px solid #eee; }
         .checkbox-group label { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 14px; }
 
-        /* Toast-Benachrichtigung */
+        /* ========================
+           Rich Text Editor (RTE)
+           ======================== */
+        .rte-wrapper {
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            overflow: hidden;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        /* Format-Toolbar (nur im Admin-Modus sichtbar) */
+        .rte-toolbar {
+            display: none; /* wird per JS eingeblendet wenn isAdmin */
+            gap: 2px;
+            padding: 5px 6px;
+            background: #f3f3f3;
+            border-bottom: 1px solid #ddd;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .rte-toolbar.visible { display: flex; }
+
+        .rte-btn {
+            padding: 3px 7px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background: white;
+            cursor: pointer;
+            font-size: 13px;
+            line-height: 1.4;
+            color: #333;
+            min-width: 26px;
+            text-align: center;
+            transition: background 0.15s;
+        }
+        .rte-btn:hover { background: #e0e0e0; }
+        .rte-btn.active { background: #d32f2f; color: white; border-color: #d32f2f; }
+        .rte-sep { width: 1px; background: #ccc; height: 20px; margin: 0 3px; }
+
+        /* Bearbeitbarer Inhalt */
+        .rte-body {
+            min-height: 60px;
+            padding: 10px;
+            outline: none;
+            font-size: 14px;
+            font-family: inherit;
+            line-height: 1.5;
+            background: white;
+            color: #333;
+        }
+        .rte-body[data-readonly="true"] {
+            background: #f9f9f9;
+            color: #555;
+            cursor: default;
+            pointer-events: none; /* kein Tippen im Lesemodus */
+        }
+        /* Formatierungen im RTE */
+        .rte-body b, .rte-body strong { font-weight: bold; }
+        .rte-body i, .rte-body em { font-style: italic; }
+        .rte-body u { text-decoration: underline; }
+        .rte-body ul { margin: 4px 0 4px 20px; padding: 0; }
+        .rte-body ol { margin: 4px 0 4px 20px; padding: 0; }
+        .rte-body li { margin-bottom: 2px; }
+
+        /* Toast */
         .toast { position: fixed; bottom: 24px; right: 24px; background: #2e7d32; color: white; padding: 12px 20px; border-radius: 8px; font-size: 14px; font-weight: bold; z-index: 9999; opacity: 0; transition: opacity 0.3s; pointer-events: none; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
         .toast.show { opacity: 1; }
 
         .record-count { font-size: 12px; color: #999; padding: 8px 10px; text-align: right; }
 
-        @media (max-width: 768px) { .grid-form { grid-template-columns: 1fr; } .full-width { grid-column: span 1; } .hide-mobile { display: none; } }
+        @media (max-width: 768px) {
+            .grid-form { grid-template-columns: 1fr; }
+            .full-width { grid-column: span 1; }
+            .hide-mobile { display: none; }
+        }
     </style>
 </head>
 <body>
@@ -186,10 +255,18 @@
                 </div>
             </div>
 
-            <div class="field full-width"><label>Indikation</label><textarea id="edit-indikation" class="auto-grow"></textarea></div>
-            <div class="field full-width"><label style="color:red">Kontraindikationen</label><textarea id="edit-kontra" class="auto-grow"></textarea></div>
-            <div class="field full-width"><label>Dosierung</label><textarea id="edit-dosierung" class="highlight-field auto-grow"></textarea></div>
-            <div class="field full-width"><label>Praxistipp / Bemerkung</label><textarea id="edit-tipp" class="tip-field auto-grow"></textarea></div>
+            <div class="field full-width"><label>Indikation</label>
+                <div class="rte-wrapper" id="rte-indikation"></div>
+            </div>
+            <div class="field full-width"><label style="color:red">Kontraindikationen</label>
+                <div class="rte-wrapper" id="rte-kontra"></div>
+            </div>
+            <div class="field full-width highlight-field"><label>Dosierung</label>
+                <div class="rte-wrapper" id="rte-dosierung"></div>
+            </div>
+            <div class="field full-width tip-field"><label>Praxistipp / Bemerkung</label>
+                <div class="rte-wrapper" id="rte-tipp"></div>
+            </div>
 
             <div class="field full-width">
                 <label>Externer Verweis (URL)</label>
@@ -199,8 +276,12 @@
                 </div>
             </div>
 
-            <div class="field full-width"><label>Nebenwirkungen</label><textarea id="edit-nebenwirkungen" class="auto-grow"></textarea></div>
-            <div class="field full-width"><label>Wirkweise</label><textarea id="edit-wirkweise" class="auto-grow"></textarea></div>
+            <div class="field full-width"><label>Nebenwirkungen</label>
+                <div class="rte-wrapper" id="rte-nebenwirkungen"></div>
+            </div>
+            <div class="field full-width"><label>Wirkweise</label>
+                <div class="rte-wrapper" id="rte-wirkweise"></div>
+            </div>
         </div>
 
         <div class="toolbar" style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px;">
@@ -211,7 +292,7 @@
     </div>
 </div>
 
-<!-- Toast-Benachrichtigung -->
+<!-- Toast -->
 <div class="toast" id="toast"></div>
 
 <script>
@@ -227,9 +308,90 @@
     let sortAufsteigend = true;
     const MASTER_PW = "RKNÖ";
 
-    // -------------------------
-    // Hilfsfunktionen
-    // -------------------------
+    // RTE-Felder: Mapping Feld-ID → DB-Spalte
+    const RTE_FELDER = ['indikation', 'kontra', 'dosierung', 'tipp', 'nebenwirkungen', 'wirkweise'];
+
+    // =========================================
+    // Rich Text Editor – Initialisierung
+    // =========================================
+
+    const RTE_TOOLBAR_HTML = `
+        <div class="rte-toolbar">
+            <button class="rte-btn" title="Fett (Strg+B)" onmousedown="rteBefehl(event,'bold')"><b>B</b></button>
+            <button class="rte-btn" title="Kursiv (Strg+I)" onmousedown="rteBefehl(event,'italic')"><i>I</i></button>
+            <button class="rte-btn" title="Unterstrichen (Strg+U)" onmousedown="rteBefehl(event,'underline')"><u>U</u></button>
+            <div class="rte-sep"></div>
+            <button class="rte-btn" title="Aufzählungsliste" onmousedown="rteBefehl(event,'insertUnorderedList')">• Liste</button>
+            <button class="rte-btn" title="Nummerierte Liste" onmousedown="rteBefehl(event,'insertOrderedList')">1. Liste</button>
+            <div class="rte-sep"></div>
+            <button class="rte-btn" title="Einzug vergrößern" onmousedown="rteBefehl(event,'indent')">→ Ein</button>
+            <button class="rte-btn" title="Einzug verkleinern" onmousedown="rteBefehl(event,'outdent')">← Aus</button>
+            <div class="rte-sep"></div>
+            <button class="rte-btn" title="Formatierung entfernen" onmousedown="rteBefehl(event,'removeFormat')">✕ Format</button>
+        </div>
+        <div class="rte-body" contenteditable="false"></div>`;
+
+    function initRTE() {
+        RTE_FELDER.forEach(feld => {
+            const wrapper = document.getElementById('rte-' + feld);
+            if (!wrapper) return;
+            wrapper.innerHTML = RTE_TOOLBAR_HTML;
+
+            // Toolbar-Buttons aktiv markieren wenn Cursor im formatierten Text steht
+            const body = wrapper.querySelector('.rte-body');
+            body.addEventListener('keyup', () => aktualisiereToolbarStatus(wrapper));
+            body.addEventListener('mouseup', () => aktualisiereToolbarStatus(wrapper));
+        });
+    }
+
+    function rteBefehl(event, befehl) {
+        event.preventDefault(); // Fokus im RTE behalten
+        document.execCommand(befehl, false, null);
+        // Toolbar-Status nach Befehl aktualisieren
+        const body = document.activeElement.closest('.rte-wrapper')?.querySelector('.rte-body');
+        if (body) aktualisiereToolbarStatus(body.closest('.rte-wrapper'));
+    }
+
+    function aktualisiereToolbarStatus(wrapper) {
+        const btns = wrapper.querySelectorAll('.rte-btn');
+        btns.forEach(btn => {
+            const title = btn.getAttribute('title') || '';
+            if (title.includes('Fett'))        btn.classList.toggle('active', document.queryCommandState('bold'));
+            if (title.includes('Kursiv'))      btn.classList.toggle('active', document.queryCommandState('italic'));
+            if (title.includes('Unterstrichen'))btn.classList.toggle('active', document.queryCommandState('underline'));
+            if (title.includes('Aufzählung')) btn.classList.toggle('active', document.queryCommandState('insertUnorderedList'));
+            if (title.includes('Nummerierte')) btn.classList.toggle('active', document.queryCommandState('insertOrderedList'));
+        });
+    }
+
+    /** Setzt Inhalt in ein RTE-Feld */
+    function rteSetzeInhalt(feld, html) {
+        const body = document.querySelector(`#rte-${feld} .rte-body`);
+        if (body) body.innerHTML = html || '';
+    }
+
+    /** Liest HTML-Inhalt aus einem RTE-Feld */
+    function rteLieseInhalt(feld) {
+        const body = document.querySelector(`#rte-${feld} .rte-body`);
+        return body ? body.innerHTML.trim() : '';
+    }
+
+    /** Schaltet alle RTE-Felder in den Lese- oder Bearbeitungsmodus */
+    function rteSetzeReadonly(nurLesen) {
+        RTE_FELDER.forEach(feld => {
+            const wrapper = document.getElementById('rte-' + feld);
+            if (!wrapper) return;
+            const body = wrapper.querySelector('.rte-body');
+            const toolbar = wrapper.querySelector('.rte-toolbar');
+            body.contentEditable = nurLesen ? 'false' : 'true';
+            body.dataset.readonly = nurLesen ? 'true' : 'false';
+            if (toolbar) toolbar.classList.toggle('visible', !nurLesen);
+        });
+    }
+
+    // =========================================
+    // Toast
+    // =========================================
 
     function zeigeToast(msg, farbe = '#2e7d32') {
         const t = document.getElementById('toast');
@@ -239,23 +401,29 @@
         setTimeout(() => t.classList.remove('show'), 2800);
     }
 
-    /** Liest alle Formularwerte aus dem Detail-Modal (scoped auf #detail-view) */
+    // =========================================
+    // Formular-Hilfsfunktionen
+    // =========================================
+
+    /** Liest alle Formularwerte – scoped auf #detail-view */
     function formularWerte() {
         const scope = document.getElementById('detail-view');
         return {
-            handelsname:   scope.querySelector('#edit-handelsname').value.trim(),
-            wirkstoff:     scope.querySelector('#edit-wirkstoff').value.trim(),
-            gruppe:        scope.querySelector('#edit-gruppe').value.trim(),
-            ampulle:       scope.querySelector('#edit-ampulle').value.trim(),
-            eintritt:      scope.querySelector('#edit-eintritt').value.trim(),
-            dauer:         scope.querySelector('#edit-dauer').value.trim(),
-            indikation:    scope.querySelector('#edit-indikation').value.trim(),
-            kontra:        scope.querySelector('#edit-kontra').value.trim(),
-            dosierung:     scope.querySelector('#edit-dosierung').value.trim(),
-            tipp:          scope.querySelector('#edit-tipp').value.trim(),
-            link:          scope.querySelector('#edit-link').value.trim(),
-            nebenwirkungen:scope.querySelector('#edit-nebenwirkungen').value.trim(),
-            wirkweise:     scope.querySelector('#edit-wirkweise').value.trim(),
+            handelsname:    scope.querySelector('#edit-handelsname').value.trim(),
+            wirkstoff:      scope.querySelector('#edit-wirkstoff').value.trim(),
+            gruppe:         scope.querySelector('#edit-gruppe').value.trim(),
+            ampulle:        scope.querySelector('#edit-ampulle').value.trim(),
+            eintritt:       scope.querySelector('#edit-eintritt').value.trim(),
+            dauer:          scope.querySelector('#edit-dauer').value.trim(),
+            link:           scope.querySelector('#edit-link').value.trim(),
+            // RTE-Felder: HTML-Inhalt
+            indikation:     rteLieseInhalt('indikation'),
+            kontra:         rteLieseInhalt('kontra'),
+            dosierung:      rteLieseInhalt('dosierung'),
+            tipp:           rteLieseInhalt('tipp'),
+            nebenwirkungen: rteLieseInhalt('nebenwirkungen'),
+            wirkweise:      rteLieseInhalt('wirkweise'),
+            // Checkboxen
             listen: Array.from(scope.querySelectorAll('input[name="liste-zugehoerigkeit"]:checked'))
                         .map(cb => cb.value).join(', '),
             routen: Array.from(scope.querySelectorAll('input[name="route"]:checked'))
@@ -263,16 +431,22 @@
         };
     }
 
-    /** Setzt alle Formularfelder im Detail-Modal auf readonly/disabled (Lesemodus) */
-    function setzeFormularModus(nurLesen) {
+    /** Setzt einfache Textfelder auf readonly */
+    function setzeTextfelderReadonly(nurLesen) {
         const scope = document.getElementById('detail-view');
-        scope.querySelectorAll('input[type="text"], textarea').forEach(el => el.readOnly = nurLesen);
+        scope.querySelectorAll('input[type="text"]').forEach(el => el.readOnly = nurLesen);
         scope.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.disabled = nurLesen);
     }
 
-    // -------------------------
+    /** Alles auf einmal umschalten */
+    function setzeFormularModus(nurLesen) {
+        setzeTextfelderReadonly(nurLesen);
+        rteSetzeReadonly(nurLesen);
+    }
+
+    // =========================================
     // Auth
-    // -------------------------
+    // =========================================
 
     function checkAuth() {
         if (sessionStorage.getItem('adminPw') === MASTER_PW) applyLogin();
@@ -295,9 +469,9 @@
         window.location.reload();
     }
 
-    // -------------------------
+    // =========================================
     // Daten laden
-    // -------------------------
+    // =========================================
 
     async function ladeDaten() {
         document.getElementById('sync-status').classList.remove('online');
@@ -311,17 +485,20 @@
         }
     }
 
-    // -------------------------
+    // =========================================
     // Tabelle
-    // -------------------------
+    // =========================================
 
     function filterTabelle() {
         const query = document.getElementById('search-bar').value.toLowerCase();
         const selectedList = document.getElementById('list-filter').value;
 
         gefilterteMedikamente = medikamente.filter(m => {
-            const matchesSearch = [m.handelsname, m.wirkstoff, m.indikation]
-                .some(v => (v || '').toLowerCase().includes(query));
+            // Bei HTML-Feldern: Tags für die Suche entfernen
+            const indikationText = (m.indikation || '').replace(/<[^>]*>/g, ' ').toLowerCase();
+            const matchesSearch = [m.handelsname, m.wirkstoff]
+                .some(v => (v || '').toLowerCase().includes(query))
+                || indikationText.includes(query);
             const matchesList = !selectedList || (m.listen || '').includes(selectedList);
             return matchesSearch && matchesList;
         });
@@ -382,9 +559,9 @@
         filterTabelle();
     }
 
-    // -------------------------
+    // =========================================
     // Detail-Modal öffnen
-    // -------------------------
+    // =========================================
 
     function zeigeDetails(id) {
         const med = medikamente.find(m => m.id === id);
@@ -393,15 +570,18 @@
 
         document.getElementById('view-title').textContent = med.handelsname || 'Details';
 
-        const felder = ['handelsname','wirkstoff','gruppe','ampulle','eintritt','dauer',
-                        'indikation','kontra','dosierung','tipp','nebenwirkungen','wirkweise','link'];
+        // Einfache Textfelder
+        const einfacheFelder = ['handelsname','wirkstoff','gruppe','ampulle','eintritt','dauer','link'];
         const scope = document.getElementById('detail-view');
-        felder.forEach(f => {
+        einfacheFelder.forEach(f => {
             const el = scope.querySelector('#edit-' + f);
             if (el) el.value = med[f] || '';
         });
 
-        // Checkboxen: explizit scoped auf #detail-view
+        // RTE-Felder befüllen
+        RTE_FELDER.forEach(f => rteSetzeInhalt(f, med[f] || ''));
+
+        // Checkboxen – scoped auf #detail-view
         const rList = (med.routen || '').split(', ');
         scope.querySelectorAll('input[name="route"]').forEach(cb => {
             cb.checked = rList.includes(cb.value);
@@ -423,12 +603,11 @@
 
         setzeFormularModus(!isAdmin);
         document.getElementById('detail-view').style.display = 'block';
-        updateAllTextareaHeights();
     }
 
-    // -------------------------
+    // =========================================
     // Neues Medikament
-    // -------------------------
+    // =========================================
 
     function neuesMedikament() {
         if (!isAdmin) return;
@@ -436,26 +615,31 @@
 
         document.getElementById('view-title').textContent = 'Neues Medikament';
 
-        // Alle Text-/Textarea-Felder leeren – scoped auf #detail-view
         const scope = document.getElementById('detail-view');
-        scope.querySelectorAll('input[type="text"], textarea').forEach(el => {
+
+        // Einfache Textfelder leeren
+        scope.querySelectorAll('input[type="text"]').forEach(el => {
             el.value = '';
             el.readOnly = false;
         });
 
-        // Checkboxen zurücksetzen – scoped auf #detail-view
+        // RTE-Felder leeren
+        RTE_FELDER.forEach(f => rteSetzeInhalt(f, ''));
+
+        // Checkboxen zurücksetzen – scoped
         scope.querySelectorAll('input[type="checkbox"]').forEach(cb => {
             cb.checked = false;
             cb.disabled = false;
         });
 
         document.getElementById('btn-open-link').style.display = 'none';
+        setzeFormularModus(false); // Bearbeitungsmodus
         document.getElementById('detail-view').style.display = 'block';
     }
 
-    // -------------------------
+    // =========================================
     // Speichern (Insert & Update)
-    // -------------------------
+    // =========================================
 
     async function speichern() {
         if (!isAdmin) return;
@@ -473,13 +657,11 @@
 
         let res;
         if (aktuellesMedId) {
-            // UPDATE
             res = await supabaseClient
                 .from('medikamente')
                 .update(obj)
                 .eq('id', aktuellesMedId);
         } else {
-            // INSERT – .select() damit Supabase den gespeicherten Datensatz zurückgibt
             res = await supabaseClient
                 .from('medikamente')
                 .insert([obj])
@@ -502,9 +684,9 @@
         }
     }
 
-    // -------------------------
+    // =========================================
     // Löschen
-    // -------------------------
+    // =========================================
 
     async function loeschen() {
         if (!isAdmin || !aktuellesMedId) return;
@@ -525,23 +707,22 @@
         }
     }
 
-    // -------------------------
+    // =========================================
     // Modal schließen
-    // -------------------------
+    // =========================================
 
     function schliessen() {
         document.getElementById('detail-view').style.display = 'none';
         aktuellesMedId = null;
     }
 
-    // Klick außerhalb des Modals schließt es
     document.getElementById('detail-view').addEventListener('click', function(e) {
         if (e.target === this) schliessen();
     });
 
-    // -------------------------
+    // =========================================
     // Info-Modal
-    // -------------------------
+    // =========================================
 
     function toggleInfo() {
         const modal = document.getElementById('info-modal');
@@ -552,35 +733,13 @@
         if (e.target === this) toggleInfo();
     });
 
-    // -------------------------
-    // Textarea Auto-Grow
-    // -------------------------
-
-    function initAutoGrow() {
-        document.querySelectorAll('.auto-grow').forEach(t => {
-            t.addEventListener('input', function() {
-                this.style.height = 'auto';
-                this.style.height = this.scrollHeight + 'px';
-            });
-        });
-    }
-
-    function updateAllTextareaHeights() {
-        setTimeout(() => {
-            document.querySelectorAll('.auto-grow').forEach(t => {
-                t.style.height = 'auto';
-                t.style.height = t.scrollHeight + 'px';
-            });
-        }, 50);
-    }
-
-    // -------------------------
+    // =========================================
     // Init
-    // -------------------------
+    // =========================================
 
     checkAuth();
+    initRTE();
     ladeDaten();
-    initAutoGrow();
 </script>
 </body>
 </html>

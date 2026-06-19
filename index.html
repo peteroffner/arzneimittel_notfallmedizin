@@ -150,6 +150,7 @@
         <div class="title-area">
             <h1><span id="sync-status" class="status-dot"></span> Arzneimittel Notfallmedizin RKNÖ</h1>
             <div class="info-icon" onclick="toggleInfo()" title="Legende öffnen">?</div>
+            <div class="info-icon" onclick="toggleGruppen()" title="Wirkstoffgruppen öffnen">Σ</div>
         </div>
         <div id="auth-controls">
             <button id="login-btn" class="btn btn-login" onclick="login()">🔑 Admin</button>
@@ -216,6 +217,39 @@
 
         <div style="margin-top: 20px; text-align: right;">
             <button class="btn btn-cancel" onclick="toggleInfo()">Schließen</button>
+        </div>
+    </div>
+</div>
+
+<!-- Wirkstoffgruppen-Modal -->
+<div id="gruppen-modal" class="modal">
+    <div class="modal-content" style="max-width: 1000px;">
+        <h2 style="color: var(--primary);">Übersicht Wirkstoffgruppen</h2>
+        <p style="font-size: 13px; color: #777; margin-top: -8px;">
+            Notfallmedizin-relevante Wirkstoffgruppen, abgeglichen mit dem RKNÖ-Medikamentenlexikon.
+        </p>
+
+        <input type="text" id="gruppen-search" placeholder="Wirkstoffgruppe oder Medikament suchen..."
+               style="width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; box-sizing: border-box;"
+               oninput="filterGruppen()">
+
+        <div style="max-height: 60vh; overflow-y: auto;">
+            <table class="info-table" id="gruppen-table">
+                <thead>
+                    <tr>
+                        <th style="width: 22%;">Wirkstoffgruppe</th>
+                        <th style="width: 50%;">Erklärung / Wirkungsweise</th>
+                        <th style="width: 28%;">Im RKNÖ-Lexikon vorhandene Medikamente</th>
+                    </tr>
+                </thead>
+                <tbody id="gruppen-tbody">
+                    <!-- wird per JS aus WIRKSTOFFGRUPPEN befüllt -->
+                </tbody>
+            </table>
+        </div>
+
+        <div style="margin-top: 20px; text-align: right;">
+            <button class="btn btn-cancel" onclick="toggleGruppen()">Schließen</button>
         </div>
     </div>
 </div>
@@ -718,6 +752,85 @@
 
     document.getElementById('detail-view').addEventListener('click', function(e) {
         if (e.target === this) schliessen();
+    });
+
+    // =========================================
+    // Wirkstoffgruppen-Modal
+    // =========================================
+
+    const WIRKSTOFFGRUPPEN = [
+        { gruppe: 'Opioid-Analgetika', erklaerung: 'Binden an Opioidrezeptoren (µ, κ, δ) im ZNS und Rückenmark, hemmen die Schmerzweiterleitung und dämpfen die zentrale Schmerzwahrnehmung. Je nach Rezeptorprofil unterschiedlich starke analgetische und atemdepressive Wirkung.', medikamente: 'Fentanyl, Morphin, Piritramid, Nalbuphin' },
+        { gruppe: 'Opioid-Antagonisten / Antidote', erklaerung: 'Verdrängen Opioide kompetitiv von ihren Rezeptoren und heben deren Wirkung (inkl. Atemdepression) auf.', medikamente: 'Naloxon' },
+        { gruppe: 'Benzodiazepine', erklaerung: 'Verstärken die Wirkung des hemmenden Neurotransmitters GABA an GABA-A-Rezeptoren → angstlösend, sedierend, muskelrelaxierend, antikonvulsiv.', medikamente: 'Diazepam, Midazolam, Lorazepam' },
+        { gruppe: 'Antidot (Benzodiazepin-Antagonist)', erklaerung: 'Kompetitiver Antagonist am GABA-A-Rezeptor, hebt die Wirkung von Benzodiazepinen auf.', medikamente: 'Flumazenil' },
+        { gruppe: 'Anästhetika (Injektionsnarkotika)', erklaerung: 'Erzeugen über verschiedene Mechanismen (GABA-Verstärkung, NMDA-Antagonismus) eine reversible Bewusstlosigkeit zur Narkoseeinleitung/-führung.', medikamente: 'Propofol, Etomidat, Esketamin' },
+        { gruppe: 'Neuromuskuläre Blocker (Muskelrelaxanzien)', erklaerung: 'Blockieren die Erregungsübertragung an der motorischen Endplatte (nikotinische ACh-Rezeptoren) → schlaffe Muskellähmung, essenziell für die Atemwegssicherung (Intubation).', medikamente: 'Rocuroniumbromid, Succinylcholin (Suxamethonium)' },
+        { gruppe: 'Antidot (Relaxanzien-Antagonist)', erklaerung: 'Bildet einen Komplex mit dem Muskelrelaxans und inaktiviert es dadurch direkt im Blut.', medikamente: 'Sugammadex' },
+        { gruppe: 'Sympathomimetika (Katecholamine)', erklaerung: 'Aktivieren adrenerge Rezeptoren (α/β) und ahmen die Wirkung von Adrenalin/Noradrenalin nach → je nach Rezeptorprofil Vasokonstriktion, positive Inotropie/Chronotropie oder Bronchodilatation.', medikamente: 'Adrenalin (Epinephrin), Noradrenalin (Norepinephrin), Dobutamin, Ephedrin, Phenylephrin' },
+        { gruppe: 'Beta-2-Sympathomimetika (Bronchodilatatoren)', erklaerung: 'Selektive Stimulation von β2-Rezeptoren der Bronchialmuskulatur → Bronchodilatation; bei Tokolyse zusätzlich Uterusrelaxation.', medikamente: 'Salbutamol, Terbutalin, Fenoterol (auch als Kombi mit Ipratropiumbromid), Hexoprenalin' },
+        { gruppe: 'Parasympatholytika (Anticholinergika)', erklaerung: 'Blockieren muskarinische Acetylcholinrezeptoren → u. a. Bronchodilatation, Sekretionshemmung, Anstieg der Herzfrequenz, Spasmolyse glatter Muskulatur.', medikamente: 'Atropin, Ipratropiumbromid (auch als Kombi), Butylscopolamin' },
+        { gruppe: 'Antiarrhythmika', erklaerung: 'Beeinflussen Ionenkanäle (v. a. Na⁺/K⁺/Ca²⁺) am Herzmuskel und modulieren so die elektrische Erregungsausbreitung zur Behandlung von Herzrhythmusstörungen.', medikamente: 'Amiodaron, Lidocain, Adenosin, Esmolol, Metoprolol' },
+        { gruppe: 'Betablocker', erklaerung: 'Kompetitive Blockade von β-Adrenorezeptoren → Senkung von Herzfrequenz, Kontraktilität und Blutdruck, antiarrhythmisch.', medikamente: 'Metoprolol, Esmolol' },
+        { gruppe: 'Vasodilatatoren', erklaerung: 'Erweitern arterielle und/oder venöse Gefäße (z. B. über NO-Freisetzung oder α-Blockade) → Senkung von Vor-/Nachlast und Blutdruck.', medikamente: 'Glyzeroltrinitrat (Nitroglyzerin), Urapidil' },
+        { gruppe: 'Schleifendiuretika', erklaerung: 'Hemmen den Na⁺/K⁺/2Cl⁻-Cotransporter in der Henle-Schleife → starke Diurese, Vorlastsenkung.', medikamente: 'Furosemid' },
+        { gruppe: 'Thrombozytenaggregationshemmer', erklaerung: 'Hemmen die Thrombozytenaktivierung/-aggregation über unterschiedliche Mechanismen (COX-Hemmung bzw. P2Y12-Blockade) → verminderte Thrombusbildung.', medikamente: 'Acetylsalicylsäure (ASS), Clopidogrel, Prasugrel, Ticagrelor' },
+        { gruppe: 'Antikoagulantien', erklaerung: 'Hemmen die plasmatische Gerinnungskaskade (z. B. Thrombin/Faktor Xa) → verzögerte Gerinnung.', medikamente: 'Heparin' },
+        { gruppe: 'Fibrinolytika (Thrombolytika)', erklaerung: 'Aktivieren Plasminogen zu Plasmin, das Fibrin spaltet → Auflösung bestehender Thromben.', medikamente: 'Tenecteplase' },
+        { gruppe: 'Antifibrinolytika', erklaerung: 'Hemmen die Aktivierung von Plasminogen zu Plasmin → Gerinnselstabilisierung, verminderter Blutverlust.', medikamente: 'Tranexamsäure' },
+        { gruppe: 'Antiemetika', erklaerung: 'Wirken antagonistisch an Rezeptoren des Brechzentrums bzw. der Area postrema (z. B. 5-HT3, D2) → Unterdrückung von Übelkeit und Erbrechen.', medikamente: 'Ondansetron' },
+        { gruppe: 'Antihistaminika (H1-Blocker)', erklaerung: 'Blockieren H1-Rezeptoren kompetitiv → Hemmung histaminvermittelter allergischer Reaktionen (Juckreiz, Ödem, Bronchokonstriktion).', medikamente: 'Dimetinden, Diphenhydramin' },
+        { gruppe: 'Glucocorticoide', erklaerung: 'Binden an intrazelluläre Glucocorticoidrezeptoren und hemmen über Genexpression die Synthese von Entzündungsmediatoren → stark entzündungshemmend, immunsuppressiv, antiallergisch (Wirkeintritt verzögert, außer inhalativ).', medikamente: 'Budesonid, Prednisolon, Prednison, Methylprednisolon' },
+        { gruppe: 'Antiepileptika / Antikonvulsiva', erklaerung: 'Dämpfen neuronale Übererregbarkeit über verschiedene Mechanismen (Na⁺-Kanal-Blockade, GABA-Modulation, SV2A-Bindung) → Unterbrechung epileptischer Anfälle.', medikamente: 'Levetiracetam, Diazepam, Lorazepam' },
+        { gruppe: 'Nicht-Opioid-Analgetika / Antipyretika', erklaerung: 'Hemmen die Prostaglandinsynthese (COX-Hemmung) bzw. wirken zentral analgetisch-antipyretisch über z. T. unklare Mechanismen → schmerzlindernd und fiebersenkend.', medikamente: 'Paracetamol, Ibuprofen, Metamizol' },
+        { gruppe: 'Inhalationsanästhetika / Analgetika', erklaerung: 'Volatiles Anästhetikum, das inhalativ aufgenommen wird und über ZNS-Dämpfung rasch einsetzende Analgesie/Sedierung erzeugt.', medikamente: 'Methoxyfluran' },
+        { gruppe: 'Protonenpumpenhemmer (PPI)', erklaerung: 'Irreversible Hemmung der H⁺/K⁺-ATPase in den Belegzellen des Magens → Reduktion der Magensäureproduktion.', medikamente: 'Pantoprazol' },
+        { gruppe: 'Vasopressin-Analoga', erklaerung: 'Wirken als Agonist an V1-Rezeptoren glatter Gefäßmuskulatur → starke Vasokonstriktion, v. a. im Splanchnikusgebiet.', medikamente: 'Terlipressin' },
+        { gruppe: 'Oxytocin-Agonisten', erklaerung: 'Stimulieren Oxytocinrezeptoren am Myometrium → Kontraktion der Gebärmuttermuskulatur (Wehenförderung, Uterustonisierung post partum).', medikamente: 'Oxytocin (synthetisches)' },
+        { gruppe: 'Bronchospasmolytika (Methylxanthine)', erklaerung: 'Hemmen die Phosphodiesterase und antagonisieren Adenosinrezeptoren → Bronchodilatation und zentrale Atemstimulation.', medikamente: 'Theophyllin' },
+        { gruppe: 'Kohlenhydrate (Antihypoglykämika)', erklaerung: 'Direkte Substitution von Glukose → rascher Anstieg des Blutzuckerspiegels bei Hypoglykämie.', medikamente: 'Glucose' },
+        { gruppe: 'Kristalloide Infusionslösungen', erklaerung: 'Isotone bzw. leicht hypotone Elektrolytlösungen zur Volumensubstitution und Deckung des Flüssigkeitsbedarfs; verteilen sich im gesamten Extrazellularraum.', medikamente: 'Kristalloide Infusionslösung' },
+        { gruppe: 'Elektrolyte (Magnesium)', erklaerung: 'Physiologischer Calcium-Antagonist; stabilisiert Zellmembranen, wirkt antiarrhythmisch und tokolytisch/antikonvulsiv (z. B. bei Eklampsie).', medikamente: 'Magnesium (Cormagnesin)' },
+    ];
+
+    function renderGruppen(filterText) {
+        const tbody = document.getElementById('gruppen-tbody');
+        const f = (filterText || '').trim().toLowerCase();
+        const gefiltert = !f ? WIRKSTOFFGRUPPEN : WIRKSTOFFGRUPPEN.filter(g =>
+            g.gruppe.toLowerCase().includes(f) ||
+            g.medikamente.toLowerCase().includes(f) ||
+            g.erklaerung.toLowerCase().includes(f)
+        );
+
+        if (gefiltert.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:#999; padding:20px;">Keine Treffer.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = gefiltert.map(g => `
+            <tr>
+                <td><b>${g.gruppe}</b></td>
+                <td>${g.erklaerung}</td>
+                <td>${g.medikamente}</td>
+            </tr>
+        `).join('');
+    }
+
+    function filterGruppen() {
+        renderGruppen(document.getElementById('gruppen-search').value);
+    }
+
+    function toggleGruppen() {
+        const modal = document.getElementById('gruppen-modal');
+        const istOffen = modal.style.display === 'block';
+        modal.style.display = istOffen ? 'none' : 'block';
+        if (!istOffen) {
+            renderGruppen('');
+            document.getElementById('gruppen-search').value = '';
+        }
+    }
+
+    document.getElementById('gruppen-modal').addEventListener('click', function(e) {
+        if (e.target === this) toggleGruppen();
     });
 
     // =========================================
